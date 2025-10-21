@@ -1,44 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GLENN VCF ADMIN PANEL</title>
   <style>
     body {
-      background-color: #0c0f19;
+      background-color: #0d0d16;
       color: white;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 30px;
+      padding: 20px;
     }
     h1 {
-      color: #d10cf9;
+      color: #d000ff;
     }
     table {
       width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
       border-collapse: collapse;
-      margin-top: 20px;
     }
     th, td {
-      border: 1px solid #555;
-      padding: 8px;
-    }
-    th {
-      background-color: #1b1f2f;
-    }
-    tr:nth-child(even) {
-      background-color: #131622;
+      padding: 10px;
+      border-bottom: 1px solid #333;
     }
     button {
-      padding: 6px 12px;
+      padding: 5px 10px;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
       color: white;
+      font-weight: bold;
     }
-    .approve { background-color: #2ecc71; }
-    .reject { background-color: #e74c3c; }
+    .approve-btn {
+      background-color: #00cc66;
+    }
+    .reject-btn {
+      background-color: #ff3333;
+    }
+    .approved {
+      color: #00ff88;
+      font-weight: bold;
+    }
+    .rejected {
+      color: #ff5555;
+      font-weight: bold;
+    }
+    .tick {
+      font-size: 18px;
+    }
+    #approvedList {
+      margin-top: 30px;
+      text-align: left;
+      display: inline-block;
+    }
+    #downloadBtn {
+      margin-top: 10px;
+      padding: 8px 15px;
+      background-color: #d000ff;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -55,31 +81,90 @@
       </tr>
     </thead>
     <tbody>
-      <!-- Contacts will load here automatically -->
+      <!-- contacts will appear here -->
     </tbody>
   </table>
 
+  <div id="approvedList">
+    <h3>✅ Approved Contacts</h3>
+    <ul id="approvedContacts"></ul>
+    <button id="downloadBtn" onclick="downloadVCF()">Download Approved Contacts (.vcf)</button>
+  </div>
+
   <script>
-    // Temporary example data (we’ll connect this to real backend later)
-    const contacts = [
-      { name: "Brian", number: "254711234567", status: "Pending" },
-      { name: "Mercy", number: "254798765432", status: "Pending" }
+    let contacts = [
+      { name: "Brian", phone: "254711234567", status: "Pending" },
+      { name: "Mercy", phone: "254798765432", status: "Pending" }
     ];
 
-    const tableBody = document.querySelector('#contactTable tbody');
-    contacts.forEach(c => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${c.name}</td>
-        <td>${c.number}</td>
-        <td>${c.status}</td>
-        <td>
-          <button class="approve">Approve</button>
-          <button class="reject">Reject</button>
-        </td>
-      `;
-      tableBody.appendChild(row);
-    });
+    function renderTable() {
+      const tbody = document.querySelector("#contactTable tbody");
+      tbody.innerHTML = "";
+      contacts.forEach((c, i) => {
+        let row = `
+          <tr>
+            <td>${c.name}</td>
+            <td>${c.phone}</td>
+            <td class="${c.status.toLowerCase()}">${c.status}</td>
+            <td>
+              ${c.status === "Pending"
+                ? `<button class="approve-btn" onclick="approve(${i})">Approve</button>
+                   <button class="reject-btn" onclick="reject(${i})">Reject</button>`
+                : c.status === "Approved"
+                ? `<span class="tick">✅</span>`
+                : `<span class="tick">❌</span>`
+              }
+            </td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+      renderApprovedList();
+    }
+
+    function approve(index) {
+      contacts[index].status = "Approved";
+      renderTable();
+    }
+
+    function reject(index) {
+      contacts[index].status = "Rejected";
+      renderTable();
+    }
+
+    function renderApprovedList() {
+      const list = document.getElementById("approvedContacts");
+      list.innerHTML = "";
+      const approved = contacts.filter(c => c.status === "Approved");
+      approved.forEach(c => {
+        const li = document.createElement("li");
+        li.textContent = `${c.name} - +${c.phone} (Approved ✅)`;
+        list.appendChild(li);
+      });
+    }
+
+    function downloadVCF() {
+      const approved = contacts.filter(c => c.status === "Approved");
+      if (approved.length === 0) {
+        alert("No approved contacts to download!");
+        return;
+      }
+
+      let vcfData = "";
+      approved.forEach(c => {
+        vcfData += `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nTEL:+${c.phone}\nEND:VCARD\n`;
+      });
+
+      const blob = new Blob([vcfData], { type: "text/vcard" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "approved_contacts.vcf";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    renderTable();
   </script>
 </body>
 </html>
