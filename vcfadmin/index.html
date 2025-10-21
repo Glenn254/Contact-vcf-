@@ -1,113 +1,148 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>💎 Glenn XMD Admin Panel</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background: #f6f9ff;
-        margin: 0;
-        padding: 20px;
-      }
-      h2 {
-        text-align: center;
-        color: #333;
-      }
-      .contact {
-        background: white;
-        margin: 10px auto;
-        padding: 10px;
-        border-radius: 10px;
-        width: 90%;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      button {
-        border: none;
-        padding: 6px 12px;
-        border-radius: 6px;
-        color: white;
-        cursor: pointer;
-      }
-      .approve {
-        background-color: green;
-      }
-      .reject {
-        background-color: red;
-      }
-      #approvedList,
-      #rejectedList {
-        margin-top: 20px;
-      }
-      .count {
-        font-weight: bold;
-        color: #444;
-      }
-      .download {
-        background: #007bff;
-        color: white;
-        padding: 8px 15px;
-        border-radius: 8px;
-        display: inline-block;
-        margin: 10px;
-        text-decoration: none;
-      }
-    </style>
-  </head>
-  <body>
-    <h2>💎 Glenn XMD Admin Panel</h2>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GLENN VCF ADMIN PANEL</title>
+  <style>
+    body { background:#0c0c12; color:#fff; font-family:Inter, Arial, sans-serif; padding:18px; }
+    h1 { text-align:center; color:#e23ef3; margin-bottom:8px; font-size:28px; }
+    p.desc { text-align:center; color:#dfeef2; opacity:.85; max-width:860px; margin:0 auto 16px; }
+    .table-wrap { max-width:920px; margin:12px auto; background:#07101a; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:14px 8px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:left; }
+    th { background:transparent; color:#dfeef2; }
+    td.name { font-weight:700; }
+    .actions { display:flex; gap:8px; align-items:center; }
+    button { padding:8px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:700; }
+    .approve { background:#12c46b; color:#062018; }
+    .reject { background:#ff5c5c; color:#2b0b0b; }
+    .tick { background:#0f6; color:#042018; padding:6px 10px; border-radius:8px; font-weight:800; display:inline-block; }
+    .cross { background:#ff6b6b; color:#200; padding:6px 10px; border-radius:8px; font-weight:800; display:inline-block; }
+    .status-label { padding:6px 10px; border-radius:8px; font-weight:700; }
+    .pending { background:#1f3b47; color:#cbe6e0; }
+    .approved { background:#134f32; color:#c7f7e0; }
+    .rejected { background:#4a2626; color:#ffd6d6; }
+    .approved-list { max-width:920px; margin:18px auto; padding:12px; border-radius:8px; background:#04121a; }
+    .download { display:inline-block; margin-top:10px; padding:10px 14px; border-radius:10px; background:#1967ff; color:white; text-decoration:none; }
+    .center { text-align:center; }
+    @media (max-width:600px) {
+      th, td { padding:10px 6px; font-size:14px; }
+      button { padding:6px 8px; font-size:14px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>GLENN VCF ADMIN PANEL</h1>
+  <p class="desc center">All submitted contacts appear below. Approve to add to VCF, or Reject to discard. Approved contacts appear below and the "Download VCF" button will export all approved contacts.</p>
 
-    <div id="contacts"></div>
+  <div class="table-wrap">
+    <table id="contactsTable">
+      <thead>
+        <tr><th>Name</th><th>Phone Number</th><th>Status</th><th>Action</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-    <div id="approvedList">
-      <h3>✅ Approved (<span id="approvedCount">0</span>)</h3>
-      <a href="/download-vcf" class="download">📥 Download Approved Contacts</a>
-      <div id="approvedContainer"></div>
+  <div class="approved-list" id="approvedBlock" style="display:none">
+    <h3 style="margin:0 0 8px;">Approved Members</h3>
+    <div id="approvedList"></div>
+    <div style="margin-top:8px;">
+      <a id="downloadVcf" class="download" href="/api/download/vcf">Download VCF of Approved</a>
     </div>
+  </div>
 
-    <div id="rejectedList">
-      <h3>❌ Rejected (<span id="rejectedCount">0</span>)</h3>
-      <div id="rejectedContainer"></div>
-    </div>
+<script>
+  async function loadContacts() {
+    try {
+      const r = await fetch('/api/contacts');
+      const jr = await r.json();
+      if (!jr.success) return;
+      const list = jr.contacts || [];
+      const tbody = document.querySelector('#contactsTable tbody');
+      tbody.innerHTML = '';
+      const approved = [];
 
-    <script>
-      const contactsDiv = document.getElementById("contacts");
-      const approvedCount = document.getElementById("approvedCount");
-      const rejectedCount = document.getElementById("rejectedCount");
-      const approvedContainer = document.getElementById("approvedContainer");
-      const rejectedContainer = document.getElementById("rejectedContainer");
+      list.forEach(c => {
+        const tr = document.createElement('tr');
 
-      async function loadContacts() {
-        const res = await fetch("/contacts");
-        const data = await res.json();
+        const nameTd = document.createElement('td');
+        nameTd.className = 'name';
+        // show name without extra emoji spaces (display neat)
+        nameTd.textContent = c.name.replace(/^💎\s*/,'');
+        const phoneTd = document.createElement('td');
+        phoneTd.textContent = c.phone;
 
-        approvedContainer.innerHTML = "";
-        rejectedContainer.innerHTML = "";
+        const statusTd = document.createElement('td');
+        const statusSpan = document.createElement('span');
+        const cls = (c.status || 'Pending').toLowerCase();
+        statusSpan.className = 'status-label ' + cls;
+        statusSpan.textContent = c.status || 'Pending';
+        statusTd.appendChild(statusSpan);
 
-        approvedCount.textContent = data.approved.length;
-        rejectedCount.textContent = data.rejected.length;
+        const actionTd = document.createElement('td');
+        actionTd.className = 'actions';
 
-        data.approved.forEach((c) => {
-          const div = document.createElement("div");
-          div.className = "contact";
-          div.innerHTML = `<b>💎 ${c.name}</b> - ${c.number} <span style="color:green;">Approved</span>`;
-          approvedContainer.appendChild(div);
-        });
+        if (c.status === 'Approved') {
+          const tick = document.createElement('span');
+          tick.className = 'tick';
+          tick.textContent = '✅ Approved';
+          actionTd.appendChild(tick);
+          approved.push(c);
+        } else if (c.status === 'Rejected') {
+          const cross = document.createElement('span');
+          cross.className = 'cross';
+          cross.textContent = '❌ Rejected';
+          actionTd.appendChild(cross);
+        } else {
+          const approveBtn = document.createElement('button');
+          approveBtn.className = 'approve';
+          approveBtn.textContent = 'Approve';
+          approveBtn.onclick = () => handleApprove(c.id);
+          const rejectBtn = document.createElement('button');
+          rejectBtn.className = 'reject';
+          rejectBtn.textContent = 'Reject';
+          rejectBtn.onclick = () => handleReject(c.id);
+          actionTd.appendChild(approveBtn);
+          actionTd.appendChild(rejectBtn);
+        }
 
-        data.rejected.forEach((c) => {
-          const div = document.createElement("div");
-          div.className = "contact";
-          div.innerHTML = `<b>${c.name}</b> - ${c.number} <span style="color:red;">Rejected</span>`;
-          rejectedContainer.appendChild(div);
-        });
+        tr.appendChild(nameTd);
+        tr.appendChild(phoneTd);
+        tr.appendChild(statusTd);
+        tr.appendChild(actionTd);
+        tbody.appendChild(tr);
+      });
+
+      // Approved list block
+      const approvedBlock = document.getElementById('approvedBlock');
+      const approvedList = document.getElementById('approvedList');
+      if (approved.length === 0) {
+        approvedBlock.style.display = 'none';
+        approvedList.innerHTML = '';
+      } else {
+        approvedBlock.style.display = 'block';
+        approvedList.innerHTML = approved.map(a => `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03)">${a.name} — ${a.phone}</div>`).join('');
       }
+    } catch(e) {
+      console.error(e);
+    }
+  }
 
-      loadContacts();
-      setInterval(loadContacts, 3000);
-    </script>
-  </body>
+  async function handleApprove(id) {
+    if (!confirm('Approve this contact?')) return;
+    await fetch(`/api/contacts/${id}/approve`, { method:'POST' });
+    await loadContacts();
+  }
+  async function handleReject(id) {
+    if (!confirm('Reject this contact?')) return;
+    await fetch(`/api/contacts/${id}/reject`, { method:'POST' });
+    await loadContacts();
+  }
+
+  loadContacts();
+  setInterval(loadContacts, 4000);
+</script>
+</body>
 </html>
