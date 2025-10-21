@@ -1,73 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>💎 Upload Contacts</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f2f3f7;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    form {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      width: 300px;
-      text-align: center;
-    }
-    input, button {
-      margin: 8px 0;
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #4caf50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #43a047;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLENN VCF GAIN</title>
+<style>
+body {
+  background: radial-gradient(circle at top, #00111f, #000);
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 30px;
+}
+.container {
+  max-width: 400px;
+  margin: auto;
+  background: #011a2f;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 0 20px #0ff;
+}
+input {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 8px;
+  text-align: center;
+}
+button {
+  background-color: #00ff99;
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
+.link-btn {
+  display: block;
+  margin: 10px auto;
+  text-decoration: none;
+  color: white;
+  background: #0077ff;
+  padding: 10px;
+  border-radius: 8px;
+  width: 80%;
+}
+.status {
+  margin-top: 15px;
+  font-weight: bold;
+}
+</style>
 </head>
 <body>
-  <h2>💎 Upload a Contact</h2>
-  <form id="uploadForm">
-    <input type="text" name="name" placeholder="Enter name" required />
-    <input type="text" name="phone" placeholder="Enter phone number" required />
-    <button type="submit">Upload</button>
-  </form>
-  <a href="/download"><button>⬇️ Download VCF</button></a>
+  <div class="container">
+    <h2 style="color:#f0f;">GLENN VCF GAIN</h2>
+    <p>Submit your WhatsApp contact to get verified</p>
+    <input type="tel" id="number" placeholder="Enter your WhatsApp number e.g. 0712345678" />
+    <input type="text" id="name" placeholder="Enter your name" />
+    <button id="uploadBtn">Upload Contact</button>
+    <p id="msg" class="status"></p>
 
-  <script>
-    const form = document.getElementById("uploadForm");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const name = formData.get("name");
-      const phone = formData.get("phone");
+    <a href="https://wa.me/254114398812" class="link-btn">💬 Chat with Glenn (Main)</a>
+    <a href="https://wa.me/254755350451" class="link-btn">💬 Chat with Glenn (Support)</a>
+    <a href="https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc" class="link-btn" style="background:#0055ff;">📢 Join Our WhatsApp Group</a>
+    <p style="margin-top:20px;font-size:12px;">Powered by GLENN XMD TECH © 2025</p>
+  </div>
 
-      const res = await fetch("/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone })
-      });
+<script>
+const btn = document.getElementById("uploadBtn");
+const msg = document.getElementById("msg");
 
-      const text = await res.text();
-      alert(text);
-      form.reset();
-    });
-  </script>
+async function loadStatus() {
+  const number = localStorage.getItem("number");
+  if (!number) return;
+  const res = await fetch("/api/contacts");
+  const data = await res.json();
+  const contact = data.find(c => c.number === number);
+  if (contact) {
+    msg.innerText = `Status: ${contact.status.toUpperCase()}`;
+    msg.style.color = contact.status === "approved" ? "#00ff99" : 
+                      contact.status === "rejected" ? "#ff4444" : "yellow";
+    if (contact.status !== "pending") btn.disabled = true;
+  }
+}
+loadStatus();
+
+btn.onclick = async () => {
+  const name = document.getElementById("name").value.trim();
+  let number = document.getElementById("number").value.trim();
+
+  if (!name || !number) {
+    msg.innerText = "Please fill all fields.";
+    msg.style.color = "orange";
+    return;
+  }
+
+  // ✅ Auto-add +254 if missing
+  if (!number.startsWith("+")) {
+    if (number.startsWith("0")) number = "+254" + number.slice(1);
+    else number = "+254" + number;
+  }
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, number })
+  });
+
+  const data = await res.json();
+  msg.innerText = data.message;
+  msg.style.color = data.success ? "#00ff99" : "orange";
+
+  if (data.success) {
+    localStorage.setItem("number", number);
+    btn.disabled = true;
+    loadStatus();
+  }
+};
+</script>
 </body>
 </html>
