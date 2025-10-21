@@ -1,49 +1,118 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Upload Contact</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLENN VCF GAIN</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #0f2027, #203a43, #2c5364);
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
+      width: 90%;
+      max-width: 400px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      background: linear-gradient(90deg, #7f00ff, #e100ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #a0aec0;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background-color: #111;
+      color: white;
+      text-align: center;
+    }
+
+    button {
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      border: none;
+      padding: 12px 40px;
+      border-radius: 20px;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .footer {
+      margin-top: 30px;
+      color: gray;
+      font-size: 0.9rem;
+    }
+
+    .contact-buttons {
+      margin-top: 20px;
+    }
+
+    .contact-buttons a {
+      display: block;
+      margin: 8px auto;
+      padding: 10px 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      width: fit-content;
+    }
+
+    .whatsapp {
+      background: #25D366;
+    }
+
+    .whatsapp2 {
+      background: #128C7E;
+    }
+
+    .group {
+      background: #0072ff;
+    }
+  </style>
 </head>
 <body>
-  <h2>Upload Contact</h2>
-  <form id="contactForm">
-    <input name="name" placeholder="Full name" required>
-    <input name="phone" placeholder="+2547XXXXXXXX" required>
-    <button type="submit">Upload</button>
-  </form>
+  <div class="card">
+    <h1>GLENN VCF GAIN</h1>
+    <p>Enter your phone number to connect</p>
 
-  <div id="after" style="display:none">
-    <p>Thanks! Message the admin on WhatsApp:</p>
-    <a id="waLink" target="_blank">Message admin</a>
-    <p><a id="downloadVcf" href="#">Download contacts (.vcf)</a></p>
+    <input type="text" placeholder="Enter phone number">
+    <input type="text" placeholder="Code will appear here">
+
+    <button>Initialize Connection</button>
+
+    <div class="contact-buttons">
+      <a href="https://wa.me/254114398812" target="_blank" class="whatsapp">💬 Chat with Glenn (Main)</a>
+      <a href="https://wa.me/254755350451" target="_blank" class="whatsapp2">💬 Chat with Glenn (Support)</a>
+      <a href="https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc" target="_blank" class="group">📢 Join Our WhatsApp Group</a>
+    </div>
+
+    <div class="footer">Powered by GLENN XMD TECH © 2025</div>
   </div>
-
-<script>
-const form=document.getElementById('contactForm');
-const after=document.getElementById('after');
-const wa=document.getElementById('waLink');
-const dl=document.getElementById('downloadVcf');
-
-// 👇 CHANGE this to your own phone number (no plus sign)
-const ADMIN='2547XXXXXXXX';
-
-form.addEventListener('submit',async(e)=>{
- e.preventDefault();
- const data=Object.fromEntries(new FormData(form).entries());
- const res=await fetch('/api/upload',{
-   method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify(data)
- });
- const j=await res.json();
- if(j.success){
-   after.style.display='block';
-   wa.href=`https://wa.me/${ADMIN}?text=Hi%20I%20uploaded%20my%20contact%20${data.name}%20${data.phone}`;
-   dl.href='/api/generate-vcf';
-   alert('Uploaded!');
-   form.reset();
- }
-});
-</script>
 </body>
 </html>
