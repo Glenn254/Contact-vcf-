@@ -3,125 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GLENN VCF GAIN</title>
+  <title>💎 Upload Contacts</title>
   <style>
     body {
-      background: linear-gradient(180deg, #001f33, #00111a);
       font-family: Arial, sans-serif;
+      background: #f2f3f7;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 300px;
       text-align: center;
-      color: white;
-      padding: 20px;
-    }
-    h2 {
-      color: #d500f9;
-      margin-bottom: 10px;
-    }
-    .container {
-      margin: auto;
-      background: rgba(0, 0, 0, 0.4);
-      padding: 20px;
-      border-radius: 20px;
-      max-width: 400px;
-      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
     }
     input, button {
+      margin: 8px 0;
       width: 100%;
       padding: 10px;
-      margin: 8px 0;
-      border: none;
       border-radius: 8px;
-      font-size: 15px;
-    }
-    input {
-      background: #111;
-      color: white;
+      border: 1px solid #ccc;
     }
     button {
+      background: #4caf50;
+      color: white;
+      border: none;
       cursor: pointer;
-      transition: 0.3s;
     }
-    .btn-upload {
-      background: #00cc66;
-      color: white;
-    }
-    .btn-main {
-      background: #00cc66;
-      color: white;
-    }
-    .btn-support {
-      background: #00695c;
-      color: white;
-    }
-    .btn-group {
-      background: #0055ff;
-      color: white;
-    }
-    .btn-upload:hover, .btn-main:hover, .btn-support:hover, .btn-group:hover {
-      opacity: 0.85;
-    }
-    #message {
-      color: #00ff66;
-      margin-top: 10px;
-      display: none;
-    }
-    footer {
-      margin-top: 20px;
-      font-size: 13px;
-      color: gray;
+    button:hover {
+      background: #43a047;
     }
   </style>
 </head>
 <body>
-
-  <div class="container">
-    <h2>GLENN VCF GAIN</h2>
-    <p>Submit your WhatsApp contact to get verified</p>
-
-    <!-- Upload Form -->
-    <form id="uploadForm">
-      <input type="text" id="whatsapp" name="whatsapp" placeholder="Enter Your WhatsApp Number" required>
-      <input type="text" id="name" name="name" placeholder="Enter Your Name" required>
-      <button type="submit" class="btn-upload">Upload Contact</button>
-      <p id="message">✅ Your contact has been submitted. Please text the admin to be approved in the VCF file.</p>
-    </form>
-
-    <hr style="margin: 20px 0; border: 1px solid #222;">
-
-    <!-- WhatsApp Buttons -->
-    <button class="btn-main" onclick="window.open('https://wa.me/254114398812','_blank')">💬 Chat with Glenn (Main)</button>
-    <button class="btn-support" onclick="window.open('https://wa.me/254755350451','_blank')">💬 Chat with Glenn (Support)</button>
-    <button class="btn-group" onclick="window.open('https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc','_blank')">📢 Join Our WhatsApp Group</button>
-
-    <footer>Powered by GLENN XMD TECH © 2025</footer>
-  </div>
+  <h2>💎 Upload a Contact</h2>
+  <form id="uploadForm">
+    <input type="text" name="name" placeholder="Enter name" required />
+    <input type="text" name="phone" placeholder="Enter phone number" required />
+    <button type="submit">Upload</button>
+  </form>
+  <a href="/download"><button>⬇️ Download VCF</button></a>
 
   <script>
-    document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+    const form = document.getElementById("uploadForm");
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const formData = new FormData(form);
+      const name = formData.get("name");
+      const phone = formData.get("phone");
 
-      const name = document.getElementById("name").value.trim();
-      const whatsapp = document.getElementById("whatsapp").value.trim();
-
-      if (!name || !whatsapp) {
-        alert("Please fill in all fields.");
-        return;
-      }
-
-      // Send contact info to backend (admin panel endpoint)
-      const response = await fetch("/api/upload", {
+      const res = await fetch("/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, whatsapp })
+        body: JSON.stringify({ name, phone })
       });
 
-      if (response.ok) {
-        document.getElementById("message").style.display = "block";
-        this.reset();
-      } else {
-        alert("Submission failed. Please try again later.");
-      }
+      const text = await res.text();
+      alert(text);
+      form.reset();
     });
   </script>
-
 </body>
 </html>
