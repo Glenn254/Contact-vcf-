@@ -1,128 +1,154 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GLENN VCF GAIN</title>
-<style>
-body {
-  background: radial-gradient(circle at top, #00111f, #000);
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 30px;
-}
-.container {
-  max-width: 400px;
-  margin: auto;
-  background: #011a2f;
-  padding: 25px;
-  border-radius: 15px;
-  box-shadow: 0 0 20px #0ff;
-}
-input {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-  border: none;
-  border-radius: 8px;
-  text-align: center;
-}
-button {
-  background-color: #00ff99;
-  color: black;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-button:disabled {
-  background-color: gray;
-  cursor: not-allowed;
-}
-.link-btn {
-  display: block;
-  margin: 10px auto;
-  text-decoration: none;
-  color: white;
-  background: #0077ff;
-  padding: 10px;
-  border-radius: 8px;
-  width: 80%;
-}
-.status {
-  margin-top: 15px;
-  font-weight: bold;
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GLENN VCF GAIN</title>
+  <style>
+    body { background:#031826; margin:0; font-family: Inter, Arial, sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .card { width:92%; max-width:420px; background:linear-gradient(180deg,#041d28,#01101a); border-radius:20px; padding:22px; color:#fff; box-shadow: 0 12px 40px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03); }
+    h1 { text-align:center; color:#d20bf0; margin:6px 0 6px; font-size:22px; }
+    p.sub { text-align:center; color:#cfe6e9; opacity:.9; margin:0 0 14px }
+    input, button { width:100%; padding:12px 14px; margin:8px 0; border-radius:10px; border:0; font-size:16px; box-sizing:border-box; }
+    input { background:#071a20; color:#fff; }
+    .submit { background:#11c46b; color:#022217; font-weight:700; cursor:pointer; border:none; }
+    .submit:disabled { opacity:.6; cursor:not-allowed; }
+    .message { display:none; margin-top:8px; padding:10px; border-radius:8px; text-align:center; font-weight:700; }
+    .message.success { background:#0f5; color:#022217; }
+    .status { margin-top:10px; padding:10px; border-radius:8px; text-align:center; }
+    .pending { background:#1f3b47; color:#cbe6e0; }
+    .approved { background:#134f32; color:#c7f7e0; }
+    .rejected { background:#4a2626; color:#ffd6d6; }
+    .links { margin-top:12px; }
+    .link-btn { display:block; text-decoration:none; text-align:center; padding:12px; border-radius:10px; margin:10px 0; color:#fff; }
+    .main { background:#12c46b; color:#042014; }
+    .support { background:#0c8b5a; }
+    .group { background:#1967ff; }
+    small { display:block; text-align:center; margin-top:8px; color:#9fb1b6; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h2 style="color:#f0f;">GLENN VCF GAIN</h2>
-    <p>Submit your WhatsApp contact to get verified</p>
-    <input type="tel" id="number" placeholder="Enter your WhatsApp number e.g. 0712345678" />
-    <input type="text" id="name" placeholder="Enter your name" />
-    <button id="uploadBtn">Upload Contact</button>
-    <p id="msg" class="status"></p>
+  <div class="card">
+    <h1>GLENN VCF GAIN</h1>
+    <p class="sub">Submit your WhatsApp contact to get verified</p>
 
-    <a href="https://wa.me/254114398812" class="link-btn">💬 Chat with Glenn (Main)</a>
-    <a href="https://wa.me/254755350451" class="link-btn">💬 Chat with Glenn (Support)</a>
-    <a href="https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc" class="link-btn" style="background:#0055ff;">📢 Join Our WhatsApp Group</a>
-    <p style="margin-top:20px;font-size:12px;">Powered by GLENN XMD TECH © 2025</p>
+    <input id="phone" placeholder="e.g. 0712345678 or 254712345678 or +254712345678" />
+    <input id="name" placeholder="Your full name" />
+    <button id="submit" class="submit">Submit Contact</button>
+
+    <div id="msg" class="message success">You have submitted your contact. Contact the admin for approval.</div>
+    <div id="statusBox" class="status pending" style="display:none"></div>
+
+    <div class="links">
+      <a id="chatMain" class="link-btn main" href="#" target="_blank">💬 Chat with Glenn (Main)</a>
+      <a id="chatSupport" class="link-btn support" href="#" target="_blank">💬 Chat with Glenn (Support)</a>
+      <a id="groupLink" class="link-btn group" href="https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc" target="_blank">📢 Join Our WhatsApp Group</a>
+    </div>
+
+    <small>Powered by GLENN XMD TECH © 2025</small>
   </div>
 
 <script>
-const btn = document.getElementById("uploadBtn");
-const msg = document.getElementById("msg");
+  // two admin numbers (you provided)
+  const mainNumber = '+254114398812';
+  const supportNumber = '+254755350451';
+  document.getElementById('chatMain').href = `https://wa.me/${mainNumber.replace('+','')}`;
+  document.getElementById('chatSupport').href = `https://wa.me/${supportNumber.replace('+','')}`;
 
-async function loadStatus() {
-  const number = localStorage.getItem("number");
-  if (!number) return;
-  const res = await fetch("/api/contacts");
-  const data = await res.json();
-  const contact = data.find(c => c.number === number);
-  if (contact) {
-    msg.innerText = `Status: ${contact.status.toUpperCase()}`;
-    msg.style.color = contact.status === "approved" ? "#00ff99" : 
-                      contact.status === "rejected" ? "#ff4444" : "yellow";
-    if (contact.status !== "pending") btn.disabled = true;
-  }
-}
-loadStatus();
+  const phoneInput = document.getElementById('phone');
+  const nameInput = document.getElementById('name');
+  const submitBtn = document.getElementById('submit');
+  const msgBox = document.getElementById('msg');
+  const statusBox = document.getElementById('statusBox');
 
-btn.onclick = async () => {
-  const name = document.getElementById("name").value.trim();
-  let number = document.getElementById("number").value.trim();
-
-  if (!name || !number) {
-    msg.innerText = "Please fill all fields.";
-    msg.style.color = "orange";
-    return;
+  function normalize(p){ return String(p||'').replace(/[\s\-\(\)]/g,''); }
+  function toInternational(p){
+    let s = normalize(p);
+    if (s.startsWith('+')) return s;
+    if (s.startsWith('0')) return '+254' + s.replace(/^0+/,'');
+    if (/^(254|255|256)\d+$/.test(s)) return '+' + s;
+    if (s.length >= 7) return '+254' + s;
+    return s;
   }
 
-  // ✅ Auto-add +254 if missing
-  if (!number.startsWith("+")) {
-    if (number.startsWith("0")) number = "+254" + number.slice(1);
-    else number = "+254" + number;
+  async function checkStatus(phone) {
+    if (!phone) return;
+    const res = await fetch(`/api/status?phone=${encodeURIComponent(phone)}`);
+    const data = await res.json();
+    if (data.found) {
+      const c = data.contact;
+      statusBox.style.display = 'block';
+      statusBox.className = 'status ' + (c.status ? c.status.toLowerCase() : 'pending');
+      statusBox.textContent = `Status: ${c.status}`;
+      // show tick or x visually
+      if (c.status === 'Approved') statusBox.textContent = `✅ Approved`;
+      if (c.status === 'Rejected') statusBox.textContent = `❌ Rejected`;
+      if (c.status === 'Pending') statusBox.textContent = `⏳ Pending`;
+      submitBtn.disabled = (c.status !== 'Pending'); // prevent re-submit if already acted on
+      // store the number so page can reload with status
+      localStorage.setItem('glenn_last_phone', c.phone);
+    } else {
+      statusBox.style.display = 'none';
+      submitBtn.disabled = false;
+    }
   }
 
-  const res = await fetch("/api/upload", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, number })
+  // On load, auto-check previously saved phone
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('glenn_last_phone');
+    if (saved) {
+      phoneInput.value = saved;
+      checkStatus(saved);
+    }
   });
 
-  const data = await res.json();
-  msg.innerText = data.message;
-  msg.style.color = data.success ? "#00ff99" : "orange";
+  submitBtn.addEventListener('click', async () => {
+    const rawPhone = phoneInput.value.trim();
+    const rawName = nameInput.value.trim();
+    if (!rawPhone || !rawName) {
+      alert('Please provide both number and name');
+      return;
+    }
+    const international = toInternational(rawPhone);
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
 
-  if (data.success) {
-    localStorage.setItem("number", number);
-    btn.disabled = true;
-    loadStatus();
-  }
-};
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ phone: international, name: rawName })
+      });
+      if (res.status === 409) {
+        const data = await res.json();
+        alert('This number was already submitted. Status: ' + data.contact.status);
+        localStorage.setItem('glenn_last_phone', data.contact.phone);
+        await checkStatus(data.contact.phone);
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitted';
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        msgBox.style.display = 'block';
+        statusBox.style.display = 'block';
+        statusBox.className = 'status pending';
+        statusBox.textContent = '⏳ Pending';
+        localStorage.setItem('glenn_last_phone', data.contact.phone);
+        submitBtn.textContent = 'Submitted';
+        submitBtn.disabled = true;
+      } else {
+        alert(data.message || 'Submit failed');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Contact';
+      }
+    } catch(e) {
+      console.error(e);
+      alert('Submission failed');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Contact';
+    }
+  });
 </script>
 </body>
 </html>
