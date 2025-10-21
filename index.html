@@ -1,118 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GLENN VCF GAIN</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glenn VCF Gain</title>
   <style>
     body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
       margin: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle at top, #0f2027, #203a43, #2c5364);
-      font-family: 'Poppins', sans-serif;
-      color: white;
+      padding: 0;
       text-align: center;
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 20px;
-      padding: 40px;
-      box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
-      width: 90%;
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 15px 0;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    section {
       max-width: 400px;
-    }
-
-    h1 {
-      font-size: 1.8rem;
-      background: linear-gradient(90deg, #7f00ff, #e100ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-    }
-
-    p {
-      color: #a0aec0;
-      margin-bottom: 20px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
     input {
-      width: 100%;
-      margin: 8px 0;
       padding: 10px;
-      border: none;
-      border-radius: 10px;
-      background-color: #111;
-      color: white;
-      text-align: center;
+      margin-bottom: 10px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
 
     button {
-      background: linear-gradient(90deg, #00c6ff, #0072ff);
-      border: none;
-      padding: 12px 40px;
-      border-radius: 20px;
+      background-color: #007bff;
       color: white;
-      font-size: 1rem;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      width: 100%;
+      font-size: 1em;
       cursor: pointer;
-      margin-top: 10px;
     }
 
-    .footer {
-      margin-top: 30px;
-      color: gray;
-      font-size: 0.9rem;
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .success-message {
+      display: none;
+      color: green;
+      margin-top: 15px;
+      font-weight: bold;
     }
 
     .contact-buttons {
-      margin-top: 20px;
+      margin-top: 25px;
     }
 
-    .contact-buttons a {
-      display: block;
-      margin: 8px auto;
-      padding: 10px 20px;
-      border-radius: 10px;
-      text-decoration: none;
+    .whatsapp-btn {
+      display: inline-block;
+      background-color: #25D366;
       color: white;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      margin: 5px;
       font-weight: bold;
-      width: fit-content;
     }
 
-    .whatsapp {
-      background: #25D366;
-    }
-
-    .whatsapp2 {
-      background: #128C7E;
-    }
-
-    .group {
-      background: #0072ff;
+    .group-btn {
+      display: inline-block;
+      background-color: #128C7E;
+      color: white;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-weight: bold;
     }
   </style>
 </head>
+
 <body>
-  <div class="card">
-    <h1>GLENN VCF GAIN</h1>
-    <p>Enter your phone number to connect</p>
+  <header>Glenn VCF Gain</header>
 
-    <input type="text" placeholder="Enter phone number">
-    <input type="text" placeholder="Code will appear here">
+  <section>
+    <h2>Upload Your Contact</h2>
+    <form id="contactForm">
+      <input type="text" id="name" name="name" placeholder="Enter your name" required />
+      <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required />
+      <button type="submit">Submit</button>
+    </form>
 
-    <button>Initialize Connection</button>
+    <p id="successMsg" class="success-message">
+      ✅ Submitted successfully! Text the admin to be verified.
+    </p>
 
     <div class="contact-buttons">
-      <a href="https://wa.me/254114398812" target="_blank" class="whatsapp">💬 Chat with Glenn (Main)</a>
-      <a href="https://wa.me/254755350451" target="_blank" class="whatsapp2">💬 Chat with Glenn (Support)</a>
-      <a href="https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc" target="_blank" class="group">📢 Join Our WhatsApp Group</a>
-    </div>
+      <p>📞 Contact Admin on WhatsApp:</p>
+      <a href="https://wa.me/254114398812" target="_blank" class="whatsapp-btn">Chat Admin 1</a>
+      <a href="https://wa.me/254755350451" target="_blank" class="whatsapp-btn">Chat Admin 2</a>
 
-    <div class="footer">Powered by GLENN XMD TECH © 2025</div>
-  </div>
+      <p>💬 Join our WhatsApp Group:</p>
+      <a href="https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc" target="_blank" class="group-btn">
+        Join Group
+      </a>
+    </div>
+  </section>
+
+  <script>
+    document.getElementById("contactForm").addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent page reload
+
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+
+      if (name && phone) {
+        // Save temporarily in localStorage (for now)
+        let contacts = JSON.parse(localStorage.getItem("contacts")) || [];
+        contacts.push({ name, phone });
+        localStorage.setItem("contacts", JSON.stringify(contacts));
+
+        // Show success message
+        document.getElementById("successMsg").style.display = "block";
+
+        // Clear form
+        document.getElementById("contactForm").reset();
+      }
+    });
+  </script>
 </body>
 </html>
