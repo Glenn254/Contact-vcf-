@@ -1,71 +1,87 @@
-// server.js
 const express = require("express");
 const fs = require("fs");
+const bodyParser = require("body-parser");
 const path = require("path");
-const cors = require("cors");
 
 const app = express();
-app.use(express.json());
-app.use(cors());
+const PORT = process.env.PORT || 3000;
+
+// 💎 Settings
+const EMOJI_PREFIX = "💎";
+
+// Middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-// Path to contacts file
-const contactsPath = path.join(__dirname, "contacts.json");
+let contacts = [];
 
-// ✅ Serve the main upload page
+// Serve upload form
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ✅ Serve the admin panel
-app.get("/vcfadmin", (req, res) => {
-  res.sendFile(path.join(__dirname, "vcfadmin", "admin.html"));
-});
+// Country code auto-detection
+function detectCountryCode(number) {
+  const clean = number.replace(/\D/g, ""); // remove non-digits
 
-// ✅ Get all submitted contacts
-app.get("/api/contacts", (req, res) => {
-  fs.readFile(contactsPath, "utf8", (err, data) => {
-    if (err) return res.status(500).json({ message: "Error reading contacts" });
-    const contacts = data ? JSON.parse(data) : [];
-    res.json(contacts);
-  });
-});
+  // If user already used a country code with +, skip
+  if (number.startsWith("+")) return number;
 
-// ✅ Submit a new contact
-app.post("/api/contacts", (req, res) => {
+  // Auto-detect based on known prefixes
+  if (clean.startsWith("255")) return `+${clean}`; // Tanzania
+  if (clean.startsWith("254")) return `+${clean}`; // Kenya
+  if (clean.startsWith("256")) return `+${clean}`; // Uganda
+  if (clean.startsWith("234")) return `+${clean}`; // Nigeria
+
+  // Local formats (Kenya default)
+  if (clean.startsWith("0")) {
+    const local = clean.slice(1);
+    return `+254${local}`;
+  }
+
+  if (clean.length === 9 && clean.startsWith("7")) {
+    return `+254${clean}`; // assume Kenya if just 7xxxxxxx
+  }
+
+  // fallback: add +254 by default
+  return `+254${clean}`;
+}
+
+// Handle uploads
+app.post("/upload", (req, res) => {
   const { name, phone } = req.body;
-  if (!name || !phone) return res.status(400).json({ message: "Missing data" });
 
-  fs.readFile(contactsPath, "utf8", (err, data) => {
-    let contacts = [];
-    if (!err && data) contacts = JSON.parse(data);
+  if (!name || !phone) return res.status(400).send("Name and phone required");
 
-    contacts.push({ name, phone, approved: false });
-    fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2), err => {
-      if (err) return res.status(500).json({ message: "Error saving contact" });
-      res.json({ message: "Contact submitted!" });
-    });
+  const formattedNumber = detectCountryCode(phone.trim());
+  const formattedName = `${EMOJI_PREFIX} ${name.trim()}`;
+
+  contacts.push({ name: formattedName, phone: formattedNumber });
+
+  res.send("✅ Contact uploaded successfully!");
+});
+
+// Generate downloadable VCF
+app.get("/download", (req, res) => {
+  if (contacts.length === 0) {
+    return res.status(400).send("No contacts available for download.");
+  }
+
+  let vcfContent = "";
+
+  contacts.forEach((contact) => {
+    vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:${contact.name}\nTEL;TYPE=CELL:${contact.phone}\nEND:VCARD\n`;
+  });
+
+  const filePath = path.join(__dirname, "contacts.vcf");
+  fs.writeFileSync(filePath, vcfContent);
+
+  res.download(filePath, "contacts.vcf", (err) => {
+    if (err) console.error(err);
   });
 });
 
-// ✅ Approve or reject contact
-app.post("/api/contacts/:index/:action", (req, res) => {
-  fs.readFile(contactsPath, "utf8", (err, data) => {
-    if (err) return res.status(500).json({ message: "Error reading contacts" });
-    const contacts = JSON.parse(data);
-    const { index, action } = req.params;
-
-    if (!contacts[index]) return res.status(404).json({ message: "Not found" });
-    if (action === "approve") contacts[index].approved = true;
-    if (action === "reject") contacts.splice(index, 1);
-
-    fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2), err => {
-      if (err) return res.status(500).json({ message: "Error saving changes" });
-      res.json({ message: `Contact ${action}d successfully!` });
-    });
-  });
-});
-
-// ✅ Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`✅ Server running on port ${PORT}`)
+);
