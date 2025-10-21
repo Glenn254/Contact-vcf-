@@ -1,27 +1,79 @@
-import express from "express";
-import fs from "fs";
-import path from "path";
-
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const bodyParser = require('body-parser');
 const app = express();
-app.use(express.json());
-app.use(express.static(path.join(process.cwd())));
+const PORT = process.env.PORT || 3000;
 
-let contacts = [];
+// Middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.use('/vcfadmin', express.static(path.join(__dirname, 'vcfadmin')));
 
-app.post("/api/upload", (req, res) => {
-  const { name, phone } = req.body || {};
-  if (!name || !phone) return res.json({ success: false });
-  contacts.push({ name, phone });
-  res.json({ success: true });
+// Path to contacts file
+const contactsFile = path.join(__dirname, 'contacts.json');
+
+// Helper to read contacts
+function readContacts() {
+  if (!fs.existsSync(contactsFile)) return [];
+  const data = fs.readFileSync(contactsFile);
+  return JSON.parse(data);
+}
+
+// Helper to save contacts
+function saveContacts(contacts) {
+  fs.writeFileSync(contactsFile, JSON.stringify(contacts, null, 2));
+}
+
+// Route to receive contact submissions
+app.post('/submit', (req, res) => {
+  const { name, phone } = req.body;
+  if (!name || !phone) {
+    return res.status(400).send('Missing name or phone number');
+  }
+
+  const contacts = readContacts();
+  contacts.push({ name, phone, approved: false });
+  saveContacts(contacts);
+
+  res.send('Your contact has been submitted. Text the admin to be approved in the VCF file.');
 });
 
-app.get("/api/generate-vcf", (req, res) => {
-  const data = contacts.map(c =>
-    `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nTEL:${c.phone}\nEND:VCARD`
-  ).join("\n");
-  res.setHeader("Content-Type","text/vcard");
-  res.setHeader("Content-Disposition","attachment; filename=contacts.vcf");
-  res.send(data);
+// Admin API — get all contacts
+app.get('/api/contacts', (req, res) => {
+  const contacts = readContacts();
+  res.json(contacts);
 });
 
-app.listen(process.env.PORT || 3000);
+// Admin API — approve or reject contact
+app.post('/api/update', (req, res) => {
+  const { index, action } = req.body;
+  const contacts = readContacts();
+
+  if (contacts[index]) {
+    if (action === 'approve') contacts[index].approved = true;
+    if (action === 'reject') contacts.splice(index, 1);
+    saveContacts(contacts);
+  }
+
+  res.json({ success: true, contacts });
+});
+
+// Generate VCF file (when admin decides)
+app.get('/generate-vcf', (req, res) => {
+  const contacts = readContacts().filter(c => c.approved);
+  let vcfData = '';
+
+  contacts.forEach(c => {
+    vcfData += `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nTEL:${c.phone}\nEND:VCARD\n`;
+  });
+
+  res.header('Content-Type', 'text/vcard');
+  res.attachment('contacts.vcf');
+  res.send(vcfData);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
