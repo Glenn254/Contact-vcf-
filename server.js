@@ -2,12 +2,11 @@ import express from "express";
 import fs from "fs";
 import cors from "cors";
 import bodyParser from "body-parser";
-import path from "path";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// middlewares
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
@@ -19,11 +18,12 @@ const rejectedFile = "./rejectedContacts.json";
 app.post("/approve", (req, res) => {
   const contact = req.body;
   let approved = [];
+
   if (fs.existsSync(approvedFile)) {
     approved = JSON.parse(fs.readFileSync(approvedFile));
   }
 
-  // remove if exists in rejected
+  // Remove from rejected if exists
   let rejected = [];
   if (fs.existsSync(rejectedFile)) {
     rejected = JSON.parse(fs.readFileSync(rejectedFile)).filter(
@@ -32,7 +32,7 @@ app.post("/approve", (req, res) => {
     fs.writeFileSync(rejectedFile, JSON.stringify(rejected, null, 2));
   }
 
-  // avoid duplicates
+  // Avoid duplicates
   if (!approved.find((c) => c.number === contact.number)) {
     approved.push(contact);
   }
@@ -45,11 +45,12 @@ app.post("/approve", (req, res) => {
 app.post("/reject", (req, res) => {
   const contact = req.body;
   let rejected = [];
+
   if (fs.existsSync(rejectedFile)) {
     rejected = JSON.parse(fs.readFileSync(rejectedFile));
   }
 
-  // remove if exists in approved
+  // Remove from approved if exists
   let approved = [];
   if (fs.existsSync(approvedFile)) {
     approved = JSON.parse(fs.readFileSync(approvedFile)).filter(
@@ -77,25 +78,34 @@ app.get("/contacts", (req, res) => {
   res.json({ approved, rejected });
 });
 
-// 📁 Download Approved Contacts as VCF
+// 💎 Download Approved Contacts as VCF
 app.get("/download-vcf", (req, res) => {
   const approved = fs.existsSync(approvedFile)
     ? JSON.parse(fs.readFileSync(approvedFile))
     : [];
 
+  if (approved.length === 0) {
+    return res.status(404).send("No approved contacts found.");
+  }
+
+  // 💎 Keep uploaded names, just add diamond emoji
   let vcfContent = approved
     .map(
       (c) => `BEGIN:VCARD
 VERSION:3.0
-FN:${c.name}
+FN:💎 ${c.name}
 TEL:${c.number}
+NOTE:✅ Approved Contact
 END:VCARD`
     )
     .join("\n");
 
-  res.setHeader("Content-Disposition", "attachment; filename=approved_contacts.vcf");
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=XMD_Approved_Contacts.vcf"
+  );
   res.setHeader("Content-Type", "text/vcard");
   res.send(vcfContent);
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`💎 Server running on port ${PORT}`));
