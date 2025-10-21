@@ -3,138 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Glenn VCF Gain</title>
+  <title>GLENN VCF GAIN</title>
   <style>
     body {
+      background: linear-gradient(180deg, #001f33, #00111a);
       font-family: Arial, sans-serif;
-      background-color: #f5f7fa;
-      margin: 0;
-      padding: 0;
       text-align: center;
-    }
-
-    header {
-      background-color: #007bff;
       color: white;
-      padding: 15px 0;
-      font-size: 1.5em;
-      font-weight: bold;
-    }
-
-    section {
-      max-width: 400px;
-      margin: 40px auto;
-      background: white;
       padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
-    input {
-      padding: 10px;
+    h2 {
+      color: #d500f9;
       margin-bottom: 10px;
-      width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 5px;
     }
-
-    button {
-      background-color: #007bff;
-      color: white;
+    .container {
+      margin: auto;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 20px;
+      border-radius: 20px;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+    input, button {
+      width: 100%;
       padding: 10px;
+      margin: 8px 0;
       border: none;
-      border-radius: 5px;
-      width: 100%;
-      font-size: 1em;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    input {
+      background: #111;
+      color: white;
+    }
+    button {
       cursor: pointer;
+      transition: 0.3s;
     }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    .success-message {
-      display: none;
-      color: green;
-      margin-top: 15px;
-      font-weight: bold;
-    }
-
-    .contact-buttons {
-      margin-top: 25px;
-    }
-
-    .whatsapp-btn {
-      display: inline-block;
-      background-color: #25D366;
+    .btn-upload {
+      background: #00cc66;
       color: white;
-      text-decoration: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-      margin: 5px;
-      font-weight: bold;
     }
-
-    .group-btn {
-      display: inline-block;
-      background-color: #128C7E;
+    .btn-main {
+      background: #00cc66;
       color: white;
-      text-decoration: none;
-      padding: 10px 15px;
-      border-radius: 5px;
+    }
+    .btn-support {
+      background: #00695c;
+      color: white;
+    }
+    .btn-group {
+      background: #0055ff;
+      color: white;
+    }
+    .btn-upload:hover, .btn-main:hover, .btn-support:hover, .btn-group:hover {
+      opacity: 0.85;
+    }
+    #message {
+      color: #00ff66;
       margin-top: 10px;
-      font-weight: bold;
+      display: none;
+    }
+    footer {
+      margin-top: 20px;
+      font-size: 13px;
+      color: gray;
     }
   </style>
 </head>
-
 <body>
-  <header>Glenn VCF Gain</header>
 
-  <section>
-    <h2>Upload Your Contact</h2>
-    <form id="contactForm">
-      <input type="text" id="name" name="name" placeholder="Enter your name" required />
-      <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required />
-      <button type="submit">Submit</button>
+  <div class="container">
+    <h2>GLENN VCF GAIN</h2>
+    <p>Submit your WhatsApp contact to get verified</p>
+
+    <!-- Upload Form -->
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="text" id="whatsapp" name="whatsapp" placeholder="Enter Your WhatsApp Number" required>
+      <input type="text" id="name" name="name" placeholder="Enter Your Name" required>
+      <input type="file" id="file" name="file" accept=".vcf,.txt,.csv" required>
+      <button type="submit" class="btn-upload">Upload Contact</button>
+      <p id="message">✅ Your contact has been submitted. Please text the admin to be approved in the VCF file.</p>
     </form>
 
-    <p id="successMsg" class="success-message">
-      ✅ Submitted successfully! Text the admin to be verified.
-    </p>
+    <hr style="margin: 20px 0; border: 1px solid #222;">
 
-    <div class="contact-buttons">
-      <p>📞 Contact Admin on WhatsApp:</p>
-      <a href="https://wa.me/254114398812" target="_blank" class="whatsapp-btn">Chat Admin 1</a>
-      <a href="https://wa.me/254755350451" target="_blank" class="whatsapp-btn">Chat Admin 2</a>
+    <!-- WhatsApp Buttons -->
+    <button class="btn-main" onclick="window.open('https://wa.me/254114398812','_blank')">💬 Chat with Glenn (Main)</button>
+    <button class="btn-support" onclick="window.open('https://wa.me/254755350451','_blank')">💬 Chat with Glenn (Support)</button>
+    <button class="btn-group" onclick="window.open('https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc','_blank')">📢 Join Our WhatsApp Group</button>
 
-      <p>💬 Join our WhatsApp Group:</p>
-      <a href="https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc" target="_blank" class="group-btn">
-        Join Group
-      </a>
-    </div>
-  </section>
+    <footer>Powered by GLENN XMD TECH © 2025</footer>
+  </div>
 
   <script>
-    document.getElementById("contactForm").addEventListener("submit", function(event) {
-      event.preventDefault(); // Prevent page reload
+    document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      
+      // Send data to backend (admin panel API endpoint)
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
 
-      const name = document.getElementById("name").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-
-      if (name && phone) {
-        // Save temporarily in localStorage (for now)
-        let contacts = JSON.parse(localStorage.getItem("contacts")) || [];
-        contacts.push({ name, phone });
-        localStorage.setItem("contacts", JSON.stringify(contacts));
-
-        // Show success message
-        document.getElementById("successMsg").style.display = "block";
-
-        // Clear form
-        document.getElementById("contactForm").reset();
+      if (response.ok) {
+        document.getElementById("message").style.display = "block";
+        this.reset();
+      } else {
+        alert("Upload failed. Please try again later.");
       }
     });
   </script>
+
 </body>
 </html>
