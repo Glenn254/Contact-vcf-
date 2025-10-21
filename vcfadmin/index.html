@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLENN VCF ADMIN PANEL</title>
+  <style>
+    body {
+      background-color: #0c0f19;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    h1 {
+      color: #d10cf9;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #555;
+      padding: 8px;
+    }
+    th {
+      background-color: #1b1f2f;
+    }
+    tr:nth-child(even) {
+      background-color: #131622;
+    }
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+    }
+    .approve { background-color: #2ecc71; }
+    .reject { background-color: #e74c3c; }
+  </style>
+</head>
+<body>
+  <h1>GLENN VCF ADMIN PANEL</h1>
+  <p>All submitted contacts appear below. Approve to add to VCF, or Reject to discard.</p>
+
+  <table id="contactTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Phone Number</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Contacts will load here automatically -->
+    </tbody>
+  </table>
+
+  <script>
+    // Temporary example data (we’ll connect this to real backend later)
+    const contacts = [
+      { name: "Brian", number: "254711234567", status: "Pending" },
+      { name: "Mercy", number: "254798765432", status: "Pending" }
+    ];
+
+    const tableBody = document.querySelector('#contactTable tbody');
+    contacts.forEach(c => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${c.name}</td>
+        <td>${c.number}</td>
+        <td>${c.status}</td>
+        <td>
+          <button class="approve">Approve</button>
+          <button class="reject">Reject</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  </script>
+</body>
+</html>
