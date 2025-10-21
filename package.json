@@ -1,20 +1,14 @@
 {
-  "name": "contact-collector",
+  "type": "module",
+  "name": "contact-vcf",
   "version": "1.0.0",
-  "description": "Contact upload system with admin approval panel and VCF export",
   "main": "server.js",
-  "type": "commonjs",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
     "cors": "^2.8.5",
-    "fs-extra": "^11.1.1",
-    "path": "^0.12.7"
-  },
-  "engines": {
-    "node": ">=18"
+    "body-parser": "^1.20.2"
   }
 }
