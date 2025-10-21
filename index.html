@@ -78,10 +78,9 @@
     <p>Submit your WhatsApp contact to get verified</p>
 
     <!-- Upload Form -->
-    <form id="uploadForm" enctype="multipart/form-data">
+    <form id="uploadForm">
       <input type="text" id="whatsapp" name="whatsapp" placeholder="Enter Your WhatsApp Number" required>
       <input type="text" id="name" name="name" placeholder="Enter Your Name" required>
-      <input type="file" id="file" name="file" accept=".vcf,.txt,.csv" required>
       <button type="submit" class="btn-upload">Upload Contact</button>
       <p id="message">✅ Your contact has been submitted. Please text the admin to be approved in the VCF file.</p>
     </form>
@@ -99,19 +98,27 @@
   <script>
     document.getElementById("uploadForm").addEventListener("submit", async function(e) {
       e.preventDefault();
-      const formData = new FormData(this);
-      
-      // Send data to backend (admin panel API endpoint)
+
+      const name = document.getElementById("name").value.trim();
+      const whatsapp = document.getElementById("whatsapp").value.trim();
+
+      if (!name || !whatsapp) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      // Send contact info to backend (admin panel endpoint)
       const response = await fetch("/api/upload", {
         method: "POST",
-        body: formData
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, whatsapp })
       });
 
       if (response.ok) {
         document.getElementById("message").style.display = "block";
         this.reset();
       } else {
-        alert("Upload failed. Please try again later.");
+        alert("Submission failed. Please try again later.");
       }
     });
   </script>
