@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Upload Contact</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
+<body>
+  <h2>Upload Contact</h2>
+  <form id="contactForm">
+    <input name="name" placeholder="Full name" required>
+    <input name="phone" placeholder="+2547XXXXXXXX" required>
+    <button type="submit">Upload</button>
+  </form>
+
+  <div id="after" style="display:none">
+    <p>Thanks! Message the admin on WhatsApp:</p>
+    <a id="waLink" target="_blank">Message admin</a>
+    <p><a id="downloadVcf" href="#">Download contacts (.vcf)</a></p>
+  </div>
+
+<script>
+const form=document.getElementById('contactForm');
+const after=document.getElementById('after');
+const wa=document.getElementById('waLink');
+const dl=document.getElementById('downloadVcf');
+
+// 👇 CHANGE this to your own phone number (no plus sign)
+const ADMIN='2547XXXXXXXX';
+
+form.addEventListener('submit',async(e)=>{
+ e.preventDefault();
+ const data=Object.fromEntries(new FormData(form).entries());
+ const res=await fetch('/api/upload',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(data)
+ });
+ const j=await res.json();
+ if(j.success){
+   after.style.display='block';
+   wa.href=`https://wa.me/${ADMIN}?text=Hi%20I%20uploaded%20my%20contact%20${data.name}%20${data.phone}`;
+   dl.href='/api/generate-vcf';
+   alert('Uploaded!');
+   form.reset();
+ }
+});
+</script>
+</body>
+</html>
