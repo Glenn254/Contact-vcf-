@@ -1,89 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel - Contact Approvals</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
-    h2 { margin-top: 30px; }
-    button { margin: 5px; padding: 5px 10px; }
-    li { list-style: none; background: white; margin: 5px 0; padding: 8px; border-radius: 5px; }
-  </style>
-</head>
-<body>
-  <h1>Admin Panel</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💎 Glenn XMD Admin Panel</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f6f9ff;
+        margin: 0;
+        padding: 20px;
+      }
+      h2 {
+        text-align: center;
+        color: #333;
+      }
+      .contact {
+        background: white;
+        margin: 10px auto;
+        padding: 10px;
+        border-radius: 10px;
+        width: 90%;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      button {
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        color: white;
+        cursor: pointer;
+      }
+      .approve {
+        background-color: green;
+      }
+      .reject {
+        background-color: red;
+      }
+      #approvedList,
+      #rejectedList {
+        margin-top: 20px;
+      }
+      .count {
+        font-weight: bold;
+        color: #444;
+      }
+      .download {
+        background: #007bff;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 8px;
+        display: inline-block;
+        margin: 10px;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>💎 Glenn XMD Admin Panel</h2>
 
-  <h2>Pending Contacts</h2>
-  <ul id="pendingList"></ul>
+    <div id="contacts"></div>
 
-  <h2>Approved Contacts (<span id="approvedCount">0</span>)</h2>
-  <ul id="approvedList"></ul>
-  <button onclick="downloadVCF()">Download Approved VCF</button>
+    <div id="approvedList">
+      <h3>✅ Approved (<span id="approvedCount">0</span>)</h3>
+      <a href="/download-vcf" class="download">📥 Download Approved Contacts</a>
+      <div id="approvedContainer"></div>
+    </div>
 
-  <h2>Rejected Contacts</h2>
-  <ul id="rejectedList"></ul>
+    <div id="rejectedList">
+      <h3>❌ Rejected (<span id="rejectedCount">0</span>)</h3>
+      <div id="rejectedContainer"></div>
+    </div>
 
-  <script>
-    async function loadContacts() {
-      const res = await fetch('/contacts');
-      const { approved, rejected } = await res.json();
+    <script>
+      const contactsDiv = document.getElementById("contacts");
+      const approvedCount = document.getElementById("approvedCount");
+      const rejectedCount = document.getElementById("rejectedCount");
+      const approvedContainer = document.getElementById("approvedContainer");
+      const rejectedContainer = document.getElementById("rejectedContainer");
 
-      // Load pending contacts from contacts.json
-      const pendingRes = await fetch('/contacts.json');
-      const pendingContacts = await pendingRes.json();
+      async function loadContacts() {
+        const res = await fetch("/contacts");
+        const data = await res.json();
 
-      const approvedNums = approved.map(c => c.number);
-      const rejectedNums = rejected.map(c => c.number);
+        approvedContainer.innerHTML = "";
+        rejectedContainer.innerHTML = "";
 
-      const pending = pendingContacts.filter(c => 
-        !approvedNums.includes(c.number) && !rejectedNums.includes(c.number)
-      );
+        approvedCount.textContent = data.approved.length;
+        rejectedCount.textContent = data.rejected.length;
 
-      // Pending
-      document.getElementById('pendingList').innerHTML = pending.map(c =>
-        `<li>${c.name} - ${c.number}
-          <button onclick="approveContact('${c.name}','${c.number}')">Approve</button>
-          <button onclick="rejectContact('${c.name}','${c.number}')">Reject</button>
-        </li>`
-      ).join('');
+        data.approved.forEach((c) => {
+          const div = document.createElement("div");
+          div.className = "contact";
+          div.innerHTML = `<b>💎 ${c.name}</b> - ${c.number} <span style="color:green;">Approved</span>`;
+          approvedContainer.appendChild(div);
+        });
 
-      // Approved
-      document.getElementById('approvedList').innerHTML = approved.map(c =>
-        `<li>${c.name} - ${c.number} ✅</li>`
-      ).join('');
+        data.rejected.forEach((c) => {
+          const div = document.createElement("div");
+          div.className = "contact";
+          div.innerHTML = `<b>${c.name}</b> - ${c.number} <span style="color:red;">Rejected</span>`;
+          rejectedContainer.appendChild(div);
+        });
+      }
 
-      // Rejected
-      document.getElementById('rejectedList').innerHTML = rejected.map(c =>
-        `<li>${c.name} - ${c.number} ❌</li>`
-      ).join('');
-
-      document.getElementById('approvedCount').textContent = approved.length;
-    }
-
-    async function approveContact(name, number) {
-      await fetch('/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, number })
-      });
       loadContacts();
-    }
-
-    async function rejectContact(name, number) {
-      await fetch('/reject', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, number })
-      });
-      loadContacts();
-    }
-
-    function downloadVCF() {
-      window.location.href = '/download-vcf';
-    }
-
-    window.onload = loadContacts;
-  </script>
-</body>
+      setInterval(loadContacts, 3000);
+    </script>
+  </body>
 </html>
