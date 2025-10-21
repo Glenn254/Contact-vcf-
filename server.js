@@ -1,87 +1,101 @@
-const express = require("express");
-const fs = require("fs");
-const bodyParser = require("body-parser");
-const path = require("path");
+import express from "express";
+import fs from "fs";
+import cors from "cors";
+import bodyParser from "body-parser";
+import path from "path";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 💎 Settings
-const EMOJI_PREFIX = "💎";
-
-// Middleware
+// middlewares
+app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
+app.use(express.static("public"));
 
-let contacts = [];
+const approvedFile = "./approvedContacts.json";
+const rejectedFile = "./rejectedContacts.json";
 
-// Serve upload form
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// Country code auto-detection
-function detectCountryCode(number) {
-  const clean = number.replace(/\D/g, ""); // remove non-digits
-
-  // If user already used a country code with +, skip
-  if (number.startsWith("+")) return number;
-
-  // Auto-detect based on known prefixes
-  if (clean.startsWith("255")) return `+${clean}`; // Tanzania
-  if (clean.startsWith("254")) return `+${clean}`; // Kenya
-  if (clean.startsWith("256")) return `+${clean}`; // Uganda
-  if (clean.startsWith("234")) return `+${clean}`; // Nigeria
-
-  // Local formats (Kenya default)
-  if (clean.startsWith("0")) {
-    const local = clean.slice(1);
-    return `+254${local}`;
+// 🟢 Approve a contact
+app.post("/approve", (req, res) => {
+  const contact = req.body;
+  let approved = [];
+  if (fs.existsSync(approvedFile)) {
+    approved = JSON.parse(fs.readFileSync(approvedFile));
   }
 
-  if (clean.length === 9 && clean.startsWith("7")) {
-    return `+254${clean}`; // assume Kenya if just 7xxxxxxx
+  // remove if exists in rejected
+  let rejected = [];
+  if (fs.existsSync(rejectedFile)) {
+    rejected = JSON.parse(fs.readFileSync(rejectedFile)).filter(
+      (c) => c.number !== contact.number
+    );
+    fs.writeFileSync(rejectedFile, JSON.stringify(rejected, null, 2));
   }
 
-  // fallback: add +254 by default
-  return `+254${clean}`;
-}
-
-// Handle uploads
-app.post("/upload", (req, res) => {
-  const { name, phone } = req.body;
-
-  if (!name || !phone) return res.status(400).send("Name and phone required");
-
-  const formattedNumber = detectCountryCode(phone.trim());
-  const formattedName = `${EMOJI_PREFIX} ${name.trim()}`;
-
-  contacts.push({ name: formattedName, phone: formattedNumber });
-
-  res.send("✅ Contact uploaded successfully!");
-});
-
-// Generate downloadable VCF
-app.get("/download", (req, res) => {
-  if (contacts.length === 0) {
-    return res.status(400).send("No contacts available for download.");
+  // avoid duplicates
+  if (!approved.find((c) => c.number === contact.number)) {
+    approved.push(contact);
   }
 
-  let vcfContent = "";
-
-  contacts.forEach((contact) => {
-    vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:${contact.name}\nTEL;TYPE=CELL:${contact.phone}\nEND:VCARD\n`;
-  });
-
-  const filePath = path.join(__dirname, "contacts.vcf");
-  fs.writeFileSync(filePath, vcfContent);
-
-  res.download(filePath, "contacts.vcf", (err) => {
-    if (err) console.error(err);
-  });
+  fs.writeFileSync(approvedFile, JSON.stringify(approved, null, 2));
+  res.json({ success: true, message: "Contact approved" });
 });
 
-app.listen(PORT, () =>
-  console.log(`✅ Server running on port ${PORT}`)
-);
+// 🔴 Reject a contact
+app.post("/reject", (req, res) => {
+  const contact = req.body;
+  let rejected = [];
+  if (fs.existsSync(rejectedFile)) {
+    rejected = JSON.parse(fs.readFileSync(rejectedFile));
+  }
+
+  // remove if exists in approved
+  let approved = [];
+  if (fs.existsSync(approvedFile)) {
+    approved = JSON.parse(fs.readFileSync(approvedFile)).filter(
+      (c) => c.number !== contact.number
+    );
+    fs.writeFileSync(approvedFile, JSON.stringify(approved, null, 2));
+  }
+
+  if (!rejected.find((c) => c.number === contact.number)) {
+    rejected.push(contact);
+  }
+
+  fs.writeFileSync(rejectedFile, JSON.stringify(rejected, null, 2));
+  res.json({ success: true, message: "Contact rejected" });
+});
+
+// 🧾 Get all approved & rejected
+app.get("/contacts", (req, res) => {
+  const approved = fs.existsSync(approvedFile)
+    ? JSON.parse(fs.readFileSync(approvedFile))
+    : [];
+  const rejected = fs.existsSync(rejectedFile)
+    ? JSON.parse(fs.readFileSync(rejectedFile))
+    : [];
+  res.json({ approved, rejected });
+});
+
+// 📁 Download Approved Contacts as VCF
+app.get("/download-vcf", (req, res) => {
+  const approved = fs.existsSync(approvedFile)
+    ? JSON.parse(fs.readFileSync(approvedFile))
+    : [];
+
+  let vcfContent = approved
+    .map(
+      (c) => `BEGIN:VCARD
+VERSION:3.0
+FN:${c.name}
+TEL:${c.number}
+END:VCARD`
+    )
+    .join("\n");
+
+  res.setHeader("Content-Disposition", "attachment; filename=approved_contacts.vcf");
+  res.setHeader("Content-Type", "text/vcard");
+  res.send(vcfContent);
+});
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
