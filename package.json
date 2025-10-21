@@ -1,6 +1,5 @@
 {
-  "type": "module",
-  "name": "contact-vcf",
+  "name": "glenn-vcf-gain",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
