@@ -1,175 +1,295 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Panel - Contact Approvals</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - GLENN VCF GAIN</title>
   <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      background: #0a0a0a;
-      color: #fff;
-      padding: 20px;
-      text-align: center;
+    :root{
+      --bg:#04121a;
+      --card:#07252b;
+      --accent:#b122ff;
+      --muted:#98a0a6;
+      --green:#16a34a;
+      --dark-green:#11402b;
+      --red:#ef4444;
+      --pill-bg: rgba(255,255,255,0.02);
+      --btn-glow: 0 8px 24px rgba(0,0,0,0.6);
     }
-    h1 { font-size: 22px; margin-bottom: 10px; }
-    .desc { color: #aaa; font-size: 14px; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; background: #111; border-radius: 10px; overflow: hidden; }
-    th, td { padding: 10px; border-bottom: 1px solid #222; font-size: 14px; }
-    th { background: #1a1a1a; text-transform: uppercase; }
-    .actions button {
-      padding: 5px 10px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      color: #fff;
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;
+      font-family:Inter,system-ui,Arial;
+      background:linear-gradient(180deg,#01131a,#051923);
+      color:#eaf6f7;padding:18px;
     }
-    .approve { background: #28a745; margin-right: 6px; }
-    .reject { background: #dc3545; }
-    .tick, .cross { font-weight: bold; }
-    .status-label.approved { color: #28a745; }
-    .status-label.rejected { color: #dc3545; }
-    .status-label.pending { color: #ffc107; }
-    .approved-list {
-      margin-top: 25px;
-      background: #111;
-      padding: 15px;
-      border-radius: 10px;
+    .wrap{max-width:1000px;margin:12px auto}
+    h1{color:var(--accent);margin:6px 0}
+    .top{
+      display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px;
+      flex-wrap:wrap;
     }
-    .download {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 10px 15px;
-      background: #007bff;
-      color: white;
-      border-radius: 8px;
-      text-decoration: none;
+    .login{
+      background:var(--card);padding:12px;border-radius:10px;
     }
+    input[type="password"]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#eaf6f7}
+    button{padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+    .btn-login{background:linear-gradient(180deg,#10b981,#059669);color:#061911}
+    .btn-logout{background:linear-gradient(180deg,#f59e0b,#b45309);color:#071014}
+    .stats{display:flex;gap:12px;align-items:center}
+    .stat{
+      background:var(--pill-bg);padding:10px 14px;border-radius:10px;min-width:140px;text-align:center
+    }
+    .stat h3{margin:0;font-size:14px;color:var(--muted)}
+    .stat p{margin:6px 0 0;font-size:18px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:14px}
+    th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+    th{color:var(--muted);font-weight:600}
+    tr .name{font-weight:700}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03)}
+    .pill.pending{background:#2d3748;color:#cbd5e1}
+    .pill.approved{background:linear-gradient(90deg,#10b981,#059669);color:#071014}
+    .pill.rejected{background:linear-gradient(90deg,#ef4444,#f97316);color:#fff}
+    .action-btn{padding:8px 10px;border-radius:8px;border:none;cursor:pointer}
+    .action-approve{background:#10b981;color:#071014;margin-right:8px}
+    .action-reject{background:#ef4444;color:#fff}
+    .download-btn{background:linear-gradient(90deg,#3b82f6,#1e40af);color:#fff;padding:8px 12px;border-radius:10px}
+    .table-scroll{max-height:68vh;overflow:auto;border-radius:8px}
+    .small{font-size:13px;color:var(--muted)}
+    .count-badge{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);font-weight:700}
   </style>
 </head>
 <body>
-  <h1>Admin Contact Panel</h1>
-  <p class="desc">All submitted contacts appear below. Approve or Reject them. Approved contacts will be available for download as a VCF file.</p>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Admin - GLENN VCF GAIN</h1>
+        <div class="small">Manage submitted contacts — Approve or Reject</div>
+      </div>
 
-  <div class="table-wrap">
-    <table id="contactsTable">
-      <thead>
-        <tr><th>Name</th><th>Phone</th><th>Status</th><th>Action</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+      <div class="login" id="loginBox">
+        <input id="adminPass" type="password" placeholder="Admin password" />
+        <button id="loginBtn" class="btn-login">Login</button>
+        <button id="logoutBtn" class="btn-logout" style="display:none">Logout</button>
+        <div id="loginMsg" class="small" style="margin-top:8px"></div>
+      </div>
+    </div>
 
-  <div class="approved-list" id="approvedBlock" style="display:none">
-    <h3>Approved Members</h3>
-    <div id="approvedList"></div>
-    <button id="downloadVcf" class="download">Download VCF of Approved</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+      <div class="stats">
+        <div class="stat"><h3>Total Submitted</h3><p id="totalSubmitted">0</p></div>
+        <div class="stat"><h3>Total Approved</h3><p id="totalApproved">0</p></div>
+        <div class="stat"><h3>Total Rejected</h3><p id="totalRejected">0</p></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="downloadVcf" class="download-btn">Download VCF (Approved)</button>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table id="contactsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th style="width:220px">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
-    async function loadContacts() {
+    const adminPassInput = document.getElementById('adminPass');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loginMsg = document.getElementById('loginMsg');
+    const contactsTableBody = document.querySelector('#contactsTable tbody');
+    const totalSubmitted = document.getElementById('totalSubmitted');
+    const totalApproved = document.getElementById('totalApproved');
+    const totalRejected = document.getElementById('totalRejected');
+    const downloadVcf = document.getElementById('downloadVcf');
+
+    const TOKEN_KEY = 'glenn_admin_token';
+
+    function setToken(t){ localStorage.setItem(TOKEN_KEY, t); }
+    function getToken(){ return localStorage.getItem(TOKEN_KEY); }
+    function clearToken(){ localStorage.removeItem(TOKEN_KEY); }
+
+    async function login() {
+      const pw = adminPassInput.value.trim();
+      if (!pw) { loginMsg.textContent = 'Enter password'; return; }
+      loginMsg.textContent = 'Logging in...';
       try {
-        const r = await fetch('/api/contacts?nocache=' + Date.now());
-        const jr = await r.json();
-        if (!jr.success) return;
-        const list = jr.contacts || [];
-        const tbody = document.querySelector('#contactsTable tbody');
-        tbody.innerHTML = '';
-        const approved = [];
-
-        list.forEach(c => {
-          const tr = document.createElement('tr');
-          const nameTd = document.createElement('td');
-          nameTd.textContent = c.name.replace(/^💎\s*/, '');
-          const phoneTd = document.createElement('td');
-          phoneTd.textContent = c.phone;
-
-          const statusTd = document.createElement('td');
-          const statusSpan = document.createElement('span');
-          const cls = (c.status || 'Pending').toLowerCase();
-          statusSpan.className = 'status-label ' + cls;
-          statusSpan.textContent = c.status || 'Pending';
-          statusTd.appendChild(statusSpan);
-
-          const actionTd = document.createElement('td');
-          actionTd.className = 'actions';
-
-          if (c.status === 'Approved') {
-            const tick = document.createElement('span');
-            tick.className = 'tick';
-            tick.textContent = '✅ Approved';
-            actionTd.appendChild(tick);
-            approved.push(c);
-          } else if (c.status === 'Rejected') {
-            const cross = document.createElement('span');
-            cross.className = 'cross';
-            cross.textContent = '❌ Rejected';
-            actionTd.appendChild(cross);
-          } else {
-            const approveBtn = document.createElement('button');
-            approveBtn.className = 'approve';
-            approveBtn.textContent = 'Approve';
-            approveBtn.onclick = () => handleApprove(c.id);
-
-            const rejectBtn = document.createElement('button');
-            rejectBtn.className = 'reject';
-            rejectBtn.textContent = 'Reject';
-            rejectBtn.onclick = () => handleReject(c.id);
-
-            actionTd.appendChild(approveBtn);
-            actionTd.appendChild(rejectBtn);
-          }
-
-          tr.appendChild(nameTd);
-          tr.appendChild(phoneTd);
-          tr.appendChild(statusTd);
-          tr.appendChild(actionTd);
-          tbody.appendChild(tr);
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: {'content-type':'application/json'},
+          body: JSON.stringify({ password: pw })
         });
-
-        const approvedBlock = document.getElementById('approvedBlock');
-        const approvedList = document.getElementById('approvedList');
-        if (approved.length === 0) {
-          approvedBlock.style.display = 'none';
-          approvedList.innerHTML = '';
-        } else {
-          approvedBlock.style.display = 'block';
-          approvedList.innerHTML = approved.map(a =>
-            `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.1)">${a.name} — ${a.phone}</div>`
-          ).join('');
+        const data = await res.json();
+        if (!res.ok) {
+          loginMsg.textContent = data.error || 'Login failed';
+          return;
         }
-      } catch(e) {
-        console.error(e);
+        setToken(data.token);
+        adminPassInput.value = '';
+        loginMsg.textContent = 'Logged in';
+        logoutBtn.style.display = 'inline-block';
+        loginBtn.style.display = 'none';
+        loadContacts();
+      } catch (err) {
+        loginMsg.textContent = 'Network error';
       }
     }
 
-    async function handleApprove(id) {
-      if (!confirm('Approve this contact?')) return;
-      await fetch(`/api/contacts/${id}/approve`, { method:'POST' });
-      await loadContacts();
+    async function logout() {
+      const token = getToken();
+      try {
+        await fetch('/api/admin/logout', { method:'POST', headers: {'x-admin-token': token }});
+      } catch(e) {}
+      clearToken();
+      loginBtn.style.display = 'inline-block';
+      logoutBtn.style.display = 'none';
+      loginMsg.textContent = '';
+      contactsTableBody.innerHTML = '';
+      totalSubmitted.textContent = '0';
+      totalApproved.textContent = '0';
+      totalRejected.textContent = '0';
     }
 
-    async function handleReject(id) {
-      if (!confirm('Reject this contact?')) return;
-      await fetch(`/api/contacts/${id}/reject`, { method:'POST' });
-      await loadContacts();
+    loginBtn.addEventListener('click', login);
+    logoutBtn.addEventListener('click', logout);
+
+    async function loadContacts() {
+      const token = getToken();
+      if (!token) { loginMsg.textContent = 'Please login'; return; }
+      try {
+        const res = await fetch('/api/admin/contacts', { headers: {'x-admin-token': token }});
+        const data = await res.json();
+        if (!res.ok) {
+          loginMsg.textContent = data.error || 'Failed to load';
+          return;
+        }
+        renderContacts(data.contacts || []);
+      } catch (err) {
+        loginMsg.textContent = 'Network error';
+      }
     }
 
-    document.getElementById('downloadVcf').addEventListener('click', async () => {
-      const res = await fetch('/api/download/vcf');
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'approved_contacts.vcf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+    function renderContacts(list) {
+      contactsTableBody.innerHTML = '';
+      let approved = 0, rejected = 0;
+      for (const c of list) {
+        const tr = document.createElement('tr');
+
+        const nameTd = document.createElement('td'); nameTd.className = 'name'; nameTd.textContent = c.name;
+        const phoneTd = document.createElement('td'); phoneTd.textContent = c.phone;
+        const submittedTd = document.createElement('td'); submittedTd.textContent = new Date(c.submittedAt).toLocaleString();
+
+        const statusTd = document.createElement('td');
+        const pill = document.createElement('span');
+        pill.className = 'pill ' + (c.status === 'approved' ? 'approved' : (c.status === 'rejected' ? 'rejected' : 'pending'));
+        pill.textContent = (c.status === 'approved' ? 'Approved' : (c.status === 'rejected' ? 'Rejected' : 'Pending'));
+        statusTd.appendChild(pill);
+
+        const actionsTd = document.createElement('td');
+        if (c.status === 'pending') {
+          const approveBtn = document.createElement('button');
+          approveBtn.className = 'action-btn action-approve';
+          approveBtn.textContent = 'Approve';
+          approveBtn.onclick = () => adminSetStatus(c.id, 'approved');
+
+          const rejectBtn = document.createElement('button');
+          rejectBtn.className = 'action-btn action-reject';
+          rejectBtn.textContent = 'Reject';
+          rejectBtn.onclick = () => adminSetStatus(c.id, 'rejected');
+
+          actionsTd.appendChild(approveBtn);
+          actionsTd.appendChild(rejectBtn);
+        } else {
+          const info = document.createElement('div');
+          info.className = 'small';
+          info.textContent = 'Reviewed: ' + (c.reviewedAt ? new Date(c.reviewedAt).toLocaleString() : '');
+          actionsTd.appendChild(info);
+
+          // allow toggling status (approve <-> reject)
+          const toggleApprove = document.createElement('button');
+          toggleApprove.className = 'action-btn action-approve';
+          toggleApprove.style.marginLeft = '8px';
+          toggleApprove.textContent = 'Set Approved';
+          toggleApprove.onclick = () => adminSetStatus(c.id, 'approved');
+
+          const toggleReject = document.createElement('button');
+          toggleReject.className = 'action-btn action-reject';
+          toggleReject.style.marginLeft = '8px';
+          toggleReject.textContent = 'Set Rejected';
+          toggleReject.onclick = () => adminSetStatus(c.id, 'rejected');
+
+          actionsTd.appendChild(toggleApprove);
+          actionsTd.appendChild(toggleReject);
+        }
+
+        tr.appendChild(nameTd);
+        tr.appendChild(phoneTd);
+        tr.appendChild(submittedTd);
+        tr.appendChild(statusTd);
+        tr.appendChild(actionsTd);
+        contactsTableBody.appendChild(tr);
+
+        if (c.status === 'approved') approved++;
+        if (c.status === 'rejected') rejected++;
+      }
+      totalSubmitted.textContent = list.length.toString();
+      totalApproved.textContent = approved.toString();
+      totalRejected.textContent = rejected.toString();
+    }
+
+    async function adminSetStatus(id, status) {
+      const token = getToken();
+      if (!token) { loginMsg.textContent = 'Not logged in'; return; }
+      try {
+        const res = await fetch('/api/admin/status', {
+          method: 'POST',
+          headers: {'content-type':'application/json', 'x-admin-token': token},
+          body: JSON.stringify({ id, status })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || 'Failed');
+          return;
+        }
+        // refresh table
+        await loadContacts();
+      } catch (err) {
+        alert('Network error');
+      }
+    }
+
+    downloadVcf.addEventListener('click', async () => {
+      const token = getToken();
+      if (!token) { loginMsg.textContent = 'Login to download'; return; }
+      // open vcf endpoint in new tab (with token in query to bypass header absence when opening)
+      // We'll use header if fetch used; simpler: open a small window that adds token in query param.
+      const url = `/api/admin/vcf?token=${encodeURIComponent(token)}`;
+      window.open(url, '_blank');
     });
 
-    loadContacts();
-    setInterval(loadContacts, 4000);
+    // Auto attempt auto-login (if token exists)
+    (function init(){
+      if (getToken()) {
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        loadContacts();
+      }
+    })();
+
+    // Optional: poll to refresh list every 12s
+    setInterval(() => {
+      if (getToken()) loadContacts();
+    }, 12000);
   </script>
 </body>
 </html>
