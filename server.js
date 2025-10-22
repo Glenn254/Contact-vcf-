@@ -11,11 +11,16 @@ const CONTACTS_FILE = path.join(__dirname, 'contacts.json');
 const VCF_FILE = path.join(__dirname, 'verified_contacts.vcf');
 
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Helpers to load/save contacts
+// ✅ Serve frontend files from "public" folder
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+
+// --- Helper functions ---
 function loadContacts() {
   try {
     const raw = fs.readFileSync(CONTACTS_FILE, 'utf8');
@@ -29,13 +34,11 @@ function saveContacts(list) {
   fs.writeFileSync(CONTACTS_FILE, JSON.stringify(list, null, 2), 'utf8');
 }
 
-// Create empty file if not exists
+// Create file if not exists
 if (!fs.existsSync(CONTACTS_FILE)) saveContacts([]);
 
-// Phone validation: Must start with country code (+254, +233, etc.)
 function validPhone(phone) {
-  if (!phone) return false;
-  return /^\+\d{6,15}$/.test(phone.trim());
+  return /^\+\d{6,15}$/.test((phone || '').trim());
 }
 
 function ensureName(name) {
@@ -44,25 +47,21 @@ function ensureName(name) {
   return t.startsWith('💎') ? t : '💎' + t;
 }
 
-// API: Submit new contact (client)
+// --- API ROUTES ---
 app.post('/api/submit', (req, res) => {
   try {
     const { phone, name } = req.body || {};
-    if (!phone || !name)
-      return res.status(400).json({ error: 'Missing phone or name' });
+    if (!phone || !name) return res.status(400).json({ error: 'Missing phone or name' });
 
     const normalized = phone.trim();
     if (!validPhone(normalized))
-      return res
-        .status(400)
-        .json({ error: 'Phone must start with country code like +254...' });
+      return res.status(400).json({ error: 'Phone must start with country code like +254...' });
 
     const fixedName = ensureName(name);
     const contacts = loadContacts();
 
-    if (contacts.find((c) => c.phone === normalized)) {
+    if (contacts.find((c) => c.phone === normalized))
       return res.status(409).json({ error: 'Phone already submitted' });
-    }
 
     const entry = {
       id: uuidv4(),
@@ -74,7 +73,6 @@ app.post('/api/submit', (req, res) => {
 
     contacts.push(entry);
     saveContacts(contacts);
-
     return res.json({ ok: true, entry });
   } catch (err) {
     console.error('Submit error', err);
@@ -82,7 +80,6 @@ app.post('/api/submit', (req, res) => {
   }
 });
 
-// API: Get all contacts (admin)
 app.get('/api/contacts', (req, res) => {
   try {
     const contacts = loadContacts();
@@ -93,13 +90,11 @@ app.get('/api/contacts', (req, res) => {
   }
 });
 
-// API: Approve or reject a contact (admin)
 app.post('/api/update-status', (req, res) => {
   try {
     const { id, status } = req.body;
-    if (!id || !['approved', 'rejected'].includes(status)) {
+    if (!id || !['approved', 'rejected'].includes(status))
       return res.status(400).json({ error: 'Invalid parameters' });
-    }
 
     const contacts = loadContacts();
     const index = contacts.findIndex((c) => c.id === id);
@@ -109,7 +104,6 @@ app.post('/api/update-status', (req, res) => {
     contacts[index].updatedAt = new Date().toISOString();
     saveContacts(contacts);
 
-    // Regenerate verified VCF whenever we approve
     if (status === 'approved') generateVCF(contacts);
 
     res.json({ ok: true, contact: contacts[index] });
@@ -119,7 +113,6 @@ app.post('/api/update-status', (req, res) => {
   }
 });
 
-// API: Get contact status by phone (client check)
 app.get('/api/status/:phone', (req, res) => {
   try {
     const contacts = loadContacts();
@@ -132,7 +125,6 @@ app.get('/api/status/:phone', (req, res) => {
   }
 });
 
-// API: Get statistics (admin)
 app.get('/api/stats', (req, res) => {
   try {
     const contacts = loadContacts();
@@ -148,10 +140,9 @@ app.get('/api/stats', (req, res) => {
   }
 });
 
-// Generate verified_contacts.vcf file
 function generateVCF(contacts) {
   const verified = contacts.filter((c) => c.status === 'approved');
-  let vcfContent = verified
+  const vcfContent = verified
     .map(
       (c) =>
         `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nTEL:${c.phone}\nEND:VCARD`
@@ -160,13 +151,9 @@ function generateVCF(contacts) {
   fs.writeFileSync(VCF_FILE, vcfContent, 'utf8');
 }
 
-// API: Download verified VCF (admin)
 app.get('/api/download-vcf', (req, res) => {
   try {
-    if (!fs.existsSync(VCF_FILE)) {
-      const contacts = loadContacts();
-      generateVCF(contacts);
-    }
+    if (!fs.existsSync(VCF_FILE)) generateVCF(loadContacts());
     res.download(VCF_FILE, 'verified_contacts.vcf');
   } catch (err) {
     console.error('VCF download error', err);
@@ -174,11 +161,10 @@ app.get('/api/download-vcf', (req, res) => {
   }
 });
 
-// Catch-all for frontend routing
+// ✅ Catch-all route for frontend (handles "Not Found" issue)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-app.listen(PORT, () =>
-  console.log(`✅ Server running on port ${PORT}`)
-);
+// Start server
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
