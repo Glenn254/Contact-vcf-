@@ -1,6 +1,7 @@
 {
   "name": "glenn-vcf-gain",
   "version": "1.0.0",
+  "description": "VCF contact manager for admin and users",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
