@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin - GLENN VCF GAIN</title>
   <style>
-    /* your entire CSS remains exactly the same — unchanged */
-    :root{
+    :root {
       --bg:#04121a;
       --card:#07252b;
       --accent:#b122ff;
@@ -14,19 +13,166 @@
       --green:#16a34a;
       --dark-green:#11402b;
       --red:#ef4444;
-      --pill-bg: rgba(255,255,255,0.02);
-      --btn-glow: 0 8px 24px rgba(0,0,0,0.6);
+      --pill-bg:rgba(255,255,255,0.02);
     }
-    /* (rest of your styles unchanged) */
+    * { box-sizing:border-box }
+    body {
+      margin:0;min-height:100vh;
+      font-family:Inter,system-ui,Arial;
+      background:linear-gradient(180deg,#01131a,#051923);
+      color:#eaf6f7;padding:18px;
+    }
+    .wrap { max-width:1000px;margin:12px auto }
+    h1 { color:var(--accent);margin:6px 0 }
+    .top { display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap; }
+    .stats { display:flex;gap:12px;align-items:center }
+    .stat { background:var(--pill-bg);padding:10px 14px;border-radius:10px;min-width:140px;text-align:center }
+    .stat h3 { margin:0;font-size:14px;color:var(--muted) }
+    .stat p { margin:6px 0 0;font-size:18px;font-weight:700 }
+    table { width:100%;border-collapse:collapse;margin-top:14px }
+    th,td { padding:12px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left }
+    th { color:var(--muted);font-weight:600 }
+    tr .name { font-weight:700 }
+    .pill { display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03) }
+    .pill.pending { background:#2d3748;color:#cbd5e1 }
+    .pill.approved { background:linear-gradient(90deg,#10b981,#059669);color:#071014 }
+    .pill.rejected { background:linear-gradient(90deg,#ef4444,#f97316);color:#fff }
+    .action-btn { padding:8px 10px;border-radius:8px;border:none;cursor:pointer }
+    .action-approve { background:#10b981;color:#071014;margin-right:8px }
+    .action-reject { background:#ef4444;color:#fff }
+    .table-scroll { max-height:68vh;overflow:auto;border-radius:8px }
+    .small { font-size:13px;color:var(--muted) }
   </style>
 </head>
 <body>
-  <!-- your entire HTML body content stays unchanged -->
   <div class="wrap">
-    ... all your existing HTML ...
+    <div class="top">
+      <div>
+        <h1>Admin - GLENN VCF GAIN</h1>
+        <div class="small">Manage submitted contacts — Approve or Reject</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><h3>Total Submitted</h3><p id="totalSubmitted">0</p></div>
+      <div class="stat"><h3>Total Approved</h3><p id="totalApproved">0</p></div>
+      <div class="stat"><h3>Total Rejected</h3><p id="totalRejected">0</p></div>
+    </div>
+
+    <div class="table-scroll">
+      <table id="contactsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th style="width:220px">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- ✅ ADD THIS LINE BELOW — JUST ABOVE THE ENDING </body> -->
-  <script src="admin.js"></script>
+  <script>
+    const contactsTableBody = document.querySelector('#contactsTable tbody');
+    const totalSubmitted = document.getElementById('totalSubmitted');
+    const totalApproved = document.getElementById('totalApproved');
+    const totalRejected = document.getElementById('totalRejected');
+
+    async function loadContacts() {
+      try {
+        const res = await fetch('/api/admin/contacts');
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || 'Failed to load contacts');
+          return;
+        }
+        renderContacts(data.contacts || []);
+      } catch (err) {
+        alert('Network error loading contacts');
+      }
+    }
+
+    function renderContacts(list) {
+      contactsTableBody.innerHTML = '';
+      let approved = 0, rejected = 0;
+      for (const c of list) {
+        const tr = document.createElement('tr');
+
+        const nameTd = document.createElement('td'); 
+        nameTd.className = 'name'; 
+        nameTd.textContent = c.name;
+
+        const phoneTd = document.createElement('td'); 
+        phoneTd.textContent = c.phone;
+
+        const submittedTd = document.createElement('td'); 
+        submittedTd.textContent = new Date(c.submittedAt).toLocaleString();
+
+        const statusTd = document.createElement('td');
+        const pill = document.createElement('span');
+        pill.className = 'pill ' + (c.status === 'approved' ? 'approved' : (c.status === 'rejected' ? 'rejected' : 'pending'));
+        pill.textContent = c.status.charAt(0).toUpperCase() + c.status.slice(1);
+        statusTd.appendChild(pill);
+
+        const actionsTd = document.createElement('td');
+        if (c.status === 'pending') {
+          const approveBtn = document.createElement('button');
+          approveBtn.className = 'action-btn action-approve';
+          approveBtn.textContent = 'Approve';
+          approveBtn.onclick = () => updateStatus(c.id, 'approved');
+
+          const rejectBtn = document.createElement('button');
+          rejectBtn.className = 'action-btn action-reject';
+          rejectBtn.textContent = 'Reject';
+          rejectBtn.onclick = () => updateStatus(c.id, 'rejected');
+
+          actionsTd.appendChild(approveBtn);
+          actionsTd.appendChild(rejectBtn);
+        } else {
+          const info = document.createElement('div');
+          info.className = 'small';
+          info.textContent = 'Reviewed: ' + (c.reviewedAt ? new Date(c.reviewedAt).toLocaleString() : '');
+          actionsTd.appendChild(info);
+        }
+
+        tr.appendChild(nameTd);
+        tr.appendChild(phoneTd);
+        tr.appendChild(submittedTd);
+        tr.appendChild(statusTd);
+        tr.appendChild(actionsTd);
+        contactsTableBody.appendChild(tr);
+
+        if (c.status === 'approved') approved++;
+        if (c.status === 'rejected') rejected++;
+      }
+      totalSubmitted.textContent = list.length;
+      totalApproved.textContent = approved;
+      totalRejected.textContent = rejected;
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        const res = await fetch('/api/admin/status', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ id, status })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || 'Failed to update status');
+          return;
+        }
+        loadContacts();
+      } catch (err) {
+        alert('Network error updating status');
+      }
+    }
+
+    loadContacts();
+    setInterval(loadContacts, 10000);
+  </script>
 </body>
 </html>
