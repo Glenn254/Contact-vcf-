@@ -8,23 +8,13 @@ const { v4: uuidv4 } = require('uuid');
 
 const PORT = process.env.PORT || 3000;
 const CONTACTS_FILE = path.join(__dirname, 'contacts.json');
-const VCF_FILE = path.join(__dirname, 'verified_contacts.vcf');
-
-const ADMIN_PASSWORD = 'glenn1234'; // ✅ Admin password (change anytime)
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Serve user frontend from root folder (index.html)
-app.use(express.static(__dirname));
-
-// ✅ Serve admin panel from /vcfadmin path
-app.use('/vcfadmin', express.static(path.join(__dirname, 'vcfadmin')));
-
-// --- Helper functions ---
+// Helpers to load/save contacts
 function loadContacts() {
   try {
     const raw = fs.readFileSync(CONTACTS_FILE, 'utf8');
@@ -38,12 +28,13 @@ function saveContacts(list) {
   fs.writeFileSync(CONTACTS_FILE, JSON.stringify(list, null, 2), 'utf8');
 }
 
-// Create contacts file if missing
+// Create empty file if not exists
 if (!fs.existsSync(CONTACTS_FILE)) saveContacts([]);
 
-// --- Validation helpers ---
+// Phone validation: Must start with country code (+254, etc.)
 function validPhone(phone) {
-  return /^\+\d{6,15}$/.test((phone || '').trim());
+  if (!phone) return false;
+  return /^\+\d{6,15}$/.test(phone.trim());
 }
 
 function ensureName(name) {
@@ -52,20 +43,7 @@ function ensureName(name) {
   return t.startsWith('💎') ? t : '💎' + t;
 }
 
-// --- ADMIN LOGIN ROUTE ---
-app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body || {};
-  if (!password) return res.status(400).json({ error: 'Missing password' });
-
-  if (password === ADMIN_PASSWORD) {
-    // Login successful
-    res.json({ ok: true, token: 'verified-admin' });
-  } else {
-    res.status(403).json({ error: 'Invalid password' });
-  }
-});
-
-// --- API ROUTES ---
+// API: Submit new contact (client)
 app.post('/api/submit', (req, res) => {
   try {
     const { phone, name } = req.body || {};
@@ -81,8 +59,10 @@ app.post('/api/submit', (req, res) => {
     const fixedName = ensureName(name);
     const contacts = loadContacts();
 
-    if (contacts.find((c) => c.phone === normalized))
+    // Prevent duplicate submissions
+    if (contacts.find((c) => c.phone === normalized)) {
       return res.status(409).json({ error: 'Phone already submitted' });
+    }
 
     const entry = {
       id: uuidv4(),
@@ -94,13 +74,15 @@ app.post('/api/submit', (req, res) => {
 
     contacts.push(entry);
     saveContacts(contacts);
-    res.json({ ok: true, entry });
+
+    return res.json({ ok: true, entry });
   } catch (err) {
     console.error('Submit error', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+// API: Get all contacts (admin)
 app.get('/api/contacts', (req, res) => {
   try {
     const contacts = loadContacts();
@@ -111,11 +93,13 @@ app.get('/api/contacts', (req, res) => {
   }
 });
 
+// API: Approve or reject a contact (admin)
 app.post('/api/update-status', (req, res) => {
   try {
     const { id, status } = req.body;
-    if (!id || !['approved', 'rejected'].includes(status))
+    if (!id || !['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Invalid parameters' });
+    }
 
     const contacts = loadContacts();
     const index = contacts.findIndex((c) => c.id === id);
@@ -125,8 +109,6 @@ app.post('/api/update-status', (req, res) => {
     contacts[index].updatedAt = new Date().toISOString();
     saveContacts(contacts);
 
-    if (status === 'approved') generateVCF(contacts);
-
     res.json({ ok: true, contact: contacts[index] });
   } catch (err) {
     console.error('Update status error', err);
@@ -134,6 +116,7 @@ app.post('/api/update-status', (req, res) => {
   }
 });
 
+// API: Get contact status by phone (for user dashboard)
 app.get('/api/status/:phone', (req, res) => {
   try {
     const contacts = loadContacts();
@@ -146,6 +129,7 @@ app.get('/api/status/:phone', (req, res) => {
   }
 });
 
+// API: Get statistics (optional for admin panel)
 app.get('/api/stats', (req, res) => {
   try {
     const contacts = loadContacts();
@@ -153,6 +137,7 @@ app.get('/api/stats', (req, res) => {
     const approved = contacts.filter((c) => c.status === 'approved').length;
     const pending = contacts.filter((c) => c.status === 'pending').length;
     const rejected = contacts.filter((c) => c.status === 'rejected').length;
+
     res.json({ ok: true, total, approved, pending, rejected });
   } catch (err) {
     console.error('Stats error', err);
@@ -160,41 +145,9 @@ app.get('/api/stats', (req, res) => {
   }
 });
 
-function generateVCF(contacts) {
-  const verified = contacts.filter((c) => c.status === 'approved');
-  const vcfContent = verified
-    .map(
-      (c) =>
-        `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nTEL:${c.phone}\nEND:VCARD`
-    )
-    .join('\n');
-  fs.writeFileSync(VCF_FILE, vcfContent, 'utf8');
-}
-
-app.get('/api/download-vcf', (req, res) => {
-  try {
-    if (!fs.existsSync(VCF_FILE)) generateVCF(loadContacts());
-    res.download(VCF_FILE, 'verified_contacts.vcf');
-  } catch (err) {
-    console.error('VCF download error', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ✅ Serve user page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// ✅ Serve admin dashboard page
-app.get('/vcfadmin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'vcfadmin', 'index.html'));
-});
-
-// ✅ Catch-all fallback
+// Catch-all for frontend routing
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ✅ Start server
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
