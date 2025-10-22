@@ -16,9 +16,11 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// ✅ Serve frontend files from "public" folder
-const publicPath = path.join(__dirname, 'public');
-app.use(express.static(publicPath));
+// ✅ Serve user frontend from root folder (index.html)
+app.use(express.static(__dirname));
+
+// ✅ Serve admin panel from /vcfadmin path
+app.use('/vcfadmin', express.static(path.join(__dirname, 'vcfadmin')));
 
 // --- Helper functions ---
 function loadContacts() {
@@ -34,9 +36,10 @@ function saveContacts(list) {
   fs.writeFileSync(CONTACTS_FILE, JSON.stringify(list, null, 2), 'utf8');
 }
 
-// Create file if not exists
+// Create contacts file if missing
 if (!fs.existsSync(CONTACTS_FILE)) saveContacts([]);
 
+// --- Validation helpers ---
 function validPhone(phone) {
   return /^\+\d{6,15}$/.test((phone || '').trim());
 }
@@ -73,7 +76,7 @@ app.post('/api/submit', (req, res) => {
 
     contacts.push(entry);
     saveContacts(contacts);
-    return res.json({ ok: true, entry });
+    res.json({ ok: true, entry });
   } catch (err) {
     console.error('Submit error', err);
     res.status(500).json({ error: 'Server error' });
@@ -132,7 +135,6 @@ app.get('/api/stats', (req, res) => {
     const approved = contacts.filter((c) => c.status === 'approved').length;
     const pending = contacts.filter((c) => c.status === 'pending').length;
     const rejected = contacts.filter((c) => c.status === 'rejected').length;
-
     res.json({ ok: true, total, approved, pending, rejected });
   } catch (err) {
     console.error('Stats error', err);
@@ -161,10 +163,20 @@ app.get('/api/download-vcf', (req, res) => {
   }
 });
 
-// ✅ Catch-all route for frontend (handles "Not Found" issue)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(publicPath, 'index.html'));
+// ✅ Serve user page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start server
+// ✅ Serve admin dashboard page
+app.get('/vcfadmin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'vcfadmin', 'index.html'));
+});
+
+// ✅ Catch-all fallback for broken routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ✅ Start server
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
