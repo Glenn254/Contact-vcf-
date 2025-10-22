@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>GLENN VCF GAIN</title>
   <style>
-    :root{
+    :root {
       --bg:#04121a;
       --card:#07252b;
       --accent:#b122ff;
@@ -17,47 +17,46 @@
       --share-blue:#0ea5e9;
       --share-dark:#0369a1;
     }
-    *{box-sizing:border-box}
-    body{
+    * { box-sizing:border-box }
+    body {
       margin:0;min-height:100vh;
       display:flex;align-items:center;justify-content:center;
       background:linear-gradient(180deg,#01131a,#051923);
       font-family:Inter,system-ui,Arial;
       color:#eaf6f7;padding:20px
     }
-    .card{
+    .card {
       width:100%;max-width:420px;
       background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
       border-radius:14px;padding:26px;
       box-shadow:0 12px 30px rgba(0,0,0,0.6)
     }
-    h1{color:var(--accent);text-align:center;margin:0 0 6px;font-size:22px}
-    p.sub{color:var(--muted);text-align:center;margin:0 0 18px}
-    .field{margin-bottom:12px}
-    input[type="text"], input[type="tel"]{
+    h1 { color:var(--accent);text-align:center;margin:0 0 6px;font-size:22px }
+    p.sub { color:var(--muted);text-align:center;margin:0 0 18px }
+    .field { margin-bottom:12px }
+    input[type="text"], input[type="tel"] {
       width:100%;padding:12px;border-radius:8px;
       border:1px solid rgba(255,255,255,0.06);
       background:transparent;color:#eaf6f7;outline:none;font-size:15px
     }
-    .btn{
+    .btn {
       display:block;width:100%;padding:12px;border-radius:10px;
       border:none;font-weight:700;margin:10px 0;cursor:pointer
     }
-    .btn-submit{background:linear-gradient(180deg,var(--green-1),var(--green-2));color:#071827}
-    .btn-locked{background:linear-gradient(180deg,var(--dark-green),#11402b);color:#dff6e9;opacity:0.95}
-    .btn-chat{background:linear-gradient(180deg,#2bd47f,#12a24f);color:#062017}
-    .btn-chat-dark{background:linear-gradient(180deg,#2f7b54,#234d3a);color:#dff6e9}
-    .btn-group{background:var(--blue);color:#fff}
-    .btn-share{background:linear-gradient(180deg,var(--share-blue),var(--share-dark));color:#f0f9ff}
-    .status{
+    .btn-submit { background:linear-gradient(180deg,var(--green-1),var(--green-2));color:#071827 }
+    .btn-locked { background:linear-gradient(180deg,var(--dark-green),#11402b);color:#dff6e9;opacity:0.95 }
+    .btn-chat { background:linear-gradient(180deg,#2bd47f,#12a24f);color:#062017 }
+    .btn-group { background:var(--blue);color:#fff }
+    .btn-share { background:linear-gradient(180deg,var(--share-blue),var(--share-dark));color:#f0f9ff }
+    .status {
       display:flex;align-items:center;gap:8px;justify-content:center;
       padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);margin-top:8px
     }
-    .status.pending{color:#d1d5db;background:rgba(255,255,255,0.01)}
-    .status.verified{color:#064e3b;background:linear-gradient(180deg, rgba(16,185,129,0.08), rgba(16,185,129,0.04))}
-    .status.rejected{color:#7f1d1d;background:linear-gradient(180deg, rgba(239,68,68,0.06), rgba(239,68,68,0.03))}
-    .muted{color:var(--muted);font-size:13px;text-align:center;margin-top:14px}
-    .note{font-size:13px;color:var(--muted);margin-top:6px;text-align:center}
+    .status.pending { color:#d1d5db;background:rgba(255,255,255,0.01) }
+    .status.verified { color:#16a34a;background:rgba(16,185,129,0.08) }
+    .status.rejected { color:#ef4444;background:rgba(239,68,68,0.06) }
+    .muted { color:var(--muted);font-size:13px;text-align:center;margin-top:14px }
+    .note { font-size:13px;color:var(--muted);margin-top:6px;text-align:center }
   </style>
 </head>
 <body>
@@ -85,48 +84,44 @@
     <button id="shareLink" class="btn btn-share">📤 Share Link</button>
 
     <div class="muted">Powered by GLENN XMD TECH © 2025</div>
-    <div class="note">Once submitted you cannot submit again from this browser/device. Phone must start with +254.</div>
+    <div class="note">Once submitted you cannot submit again from this device.</div>
   </div>
 
   <script>
+    const SUBMIT_KEY = 'glenn_vcf_submitted';
+    const CHAT_NUMBER = '+254755350451';
+    const GROUP_LINK = 'https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc';
+
     const submitBtn = document.getElementById('submitBtn');
     const phoneInput = document.getElementById('phone');
     const nameInput = document.getElementById('name');
     const statusWrap = document.getElementById('statusWrap');
     const statusBox = document.getElementById('statusBox');
     const statusText = document.getElementById('statusText');
+
     const chatMain = document.getElementById('chatMain');
     const joinGroup = document.getElementById('joinGroup');
     const shareLink = document.getElementById('shareLink');
 
-    const CHAT_NUMBER = '+254755350451';
-    const GROUP_LINK = 'https://chat.whatsapp.com/JpArBoMdjMl4a4PqQyK4rX?mode=wwc';
-
-    const SUBMIT_KEY = 'glenn_vcf_submitted';
-
-    // Restore lock if previously submitted
+    // restore saved contact
     const stored = localStorage.getItem(SUBMIT_KEY);
     if (stored) {
       const info = JSON.parse(stored);
       lockUI(info);
-      checkServerStatus(info.phone, info.id);
+      checkServerStatus(info.phone);
     }
 
-    // Auto-add 💎 prefix
     nameInput.addEventListener('blur', () => {
       let v = nameInput.value.trim();
-      if (!v) return;
-      if (!v.startsWith('💎')) nameInput.value = '💎' + v;
+      if (v && !v.startsWith('💎')) nameInput.value = '💎' + v;
     });
 
-    // Submit logic
     submitBtn.addEventListener('click', async () => {
       const phone = phoneInput.value.trim();
       let name = nameInput.value.trim();
-
-      if (!phone || !name) { alert('Please enter phone and name'); return; }
-      if (!phone.startsWith('+254')) { alert('Phone must start with +254'); return; }
-      if (!/^\+254\d{6,15}$/.test(phone)) { alert('Phone must be +254 followed by digits'); return; }
+      if (!phone || !name) return alert('Please enter phone and name');
+      if (!phone.startsWith('+254')) return alert('Phone must start with +254');
+      if (!/^\+254\d{6,15}$/.test(phone)) return alert('Invalid phone format');
       if (!name.startsWith('💎')) name = '💎' + name;
 
       submitBtn.disabled = true;
@@ -135,96 +130,78 @@
       try {
         const res = await fetch('/api/submit', {
           method: 'POST',
-          headers: {'content-type':'application/json'},
+          headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ phone, name })
         });
         const data = await res.json();
-        if (!res.ok) {
-          alert(data.error || 'Submission failed');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Contact';
-          return;
-        }
-        const entry = data.entry;
-        const mark = { id: entry.id, phone: entry.phone, name: entry.name, status: entry.status };
+        if (!res.ok) throw new Error(data.error || 'Failed');
+
+        const mark = { phone: data.entry.phone, name: data.entry.name, status: data.entry.status };
         localStorage.setItem(SUBMIT_KEY, JSON.stringify(mark));
         lockUI(mark);
-        alert('Submitted successfully. Status is Pending until reviewed.');
+        alert('Submitted successfully! Status: Pending');
       } catch (err) {
-        console.error(err);
-        alert('Network error. Please try again.');
+        alert('Network or server error.');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Contact';
       }
     });
 
     function lockUI(info) {
+      phoneInput.disabled = true;
+      nameInput.disabled = true;
       submitBtn.disabled = true;
       submitBtn.classList.remove('btn-submit');
       submitBtn.classList.add('btn-locked');
       submitBtn.textContent = 'Submitted';
-      phoneInput.disabled = true;
-      nameInput.disabled = true;
       statusWrap.style.display = 'block';
       updateStatusVisual(info.status || 'pending');
     }
 
     function updateStatusVisual(status) {
-      const s = (status || '').toLowerCase();
+      const s = status.toLowerCase();
       if (s === 'verified') {
         statusBox.className = 'status verified';
         statusText.textContent = '✅ Verified';
       } else if (s === 'rejected') {
         statusBox.className = 'status rejected';
-        statusText.textContent = 'Rejected ❌';
+        statusText.textContent = '❌ Rejected';
       } else {
         statusBox.className = 'status pending';
         statusText.textContent = 'Pending';
       }
     }
 
-    chatMain.addEventListener('click', () => {
-      window.open('https://wa.me/' + CHAT_NUMBER.replace(/\D/g,''), '_blank');
-    });
-    joinGroup.addEventListener('click', () => {
-      window.open(GROUP_LINK, '_blank');
-    });
-
-    // 📤 Share Link button logic
-    shareLink.addEventListener('click', () => {
-      const message = encodeURIComponent(
-        "💎 Join GLENN VCF GAIN and get verified today!\n🔗 " + GROUP_LINK
-      );
-      window.open(`https://wa.me/?text=${message}`, '_blank');
-    });
-
-    async function checkServerStatus(phone, id) {
-      if (!phone) return;
+    async function checkServerStatus(phone) {
       try {
         const res = await fetch('/api/status/' + encodeURIComponent(phone));
         if (!res.ok) return;
         const data = await res.json();
         if (data && data.status) {
-          const storedStr = localStorage.getItem(SUBMIT_KEY);
-          if (storedStr) {
-            const current = JSON.parse(storedStr);
-            current.status = data.status;
-            localStorage.setItem(SUBMIT_KEY, JSON.stringify(current));
-            updateStatusVisual(data.status);
-          } else {
-            updateStatusVisual(data.status);
-          }
+          const saved = JSON.parse(localStorage.getItem(SUBMIT_KEY) || '{}');
+          saved.status = data.status;
+          localStorage.setItem(SUBMIT_KEY, JSON.stringify(saved));
+          updateStatusVisual(data.status);
         }
-      } catch (e) {}
+      } catch {}
     }
 
-    // Poll server every 20s
+    // Poll every 20s for status updates
     setInterval(() => {
-      const s = localStorage.getItem(SUBMIT_KEY);
-      if (!s) return;
-      const info = JSON.parse(s);
-      checkServerStatus(info.phone, info.id);
+      const saved = localStorage.getItem(SUBMIT_KEY);
+      if (saved) {
+        const info = JSON.parse(saved);
+        checkServerStatus(info.phone);
+      }
     }, 20000);
+
+    // buttons
+    chatMain.onclick = () => window.open('https://wa.me/' + CHAT_NUMBER.replace(/\D/g,''), '_blank');
+    joinGroup.onclick = () => window.open(GROUP_LINK, '_blank');
+    shareLink.onclick = () => {
+      const message = encodeURIComponent(`💎 Join GLENN VCF GAIN and get verified today!\n🔗 ${GROUP_LINK}`);
+      window.open('https://wa.me/?text=' + message, '_blank');
+    };
   </script>
 </body>
 </html>
