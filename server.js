@@ -10,6 +10,8 @@ const PORT = process.env.PORT || 3000;
 const CONTACTS_FILE = path.join(__dirname, 'contacts.json');
 const VCF_FILE = path.join(__dirname, 'verified_contacts.vcf');
 
+const ADMIN_PASSWORD = 'glenn1234'; // ✅ Admin password (change anytime)
+
 const app = express();
 
 // Middleware
@@ -50,15 +52,31 @@ function ensureName(name) {
   return t.startsWith('💎') ? t : '💎' + t;
 }
 
+// --- ADMIN LOGIN ROUTE ---
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body || {};
+  if (!password) return res.status(400).json({ error: 'Missing password' });
+
+  if (password === ADMIN_PASSWORD) {
+    // Login successful
+    res.json({ ok: true, token: 'verified-admin' });
+  } else {
+    res.status(403).json({ error: 'Invalid password' });
+  }
+});
+
 // --- API ROUTES ---
 app.post('/api/submit', (req, res) => {
   try {
     const { phone, name } = req.body || {};
-    if (!phone || !name) return res.status(400).json({ error: 'Missing phone or name' });
+    if (!phone || !name)
+      return res.status(400).json({ error: 'Missing phone or name' });
 
     const normalized = phone.trim();
     if (!validPhone(normalized))
-      return res.status(400).json({ error: 'Phone must start with country code like +254...' });
+      return res
+        .status(400)
+        .json({ error: 'Phone must start with country code like +254...' });
 
     const fixedName = ensureName(name);
     const contacts = loadContacts();
@@ -173,7 +191,7 @@ app.get('/vcfadmin', (req, res) => {
   res.sendFile(path.join(__dirname, 'vcfadmin', 'index.html'));
 });
 
-// ✅ Catch-all fallback for broken routes
+// ✅ Catch-all fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
