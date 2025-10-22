@@ -1,38 +1,51 @@
-// vcfadmin/admin.js
-
-// The base URL of your Render backend
+// ✅ Base URL for your live Render backend
 const API_URL = "https://contact-vcf-zvy1.onrender.com";
 
-// Example: Load verified contacts
+// ✅ Load all submitted contacts
 async function loadContacts() {
   try {
-    const response = await fetch(`${API_URL}/api/contacts`);
-    if (!response.ok) throw new Error("Failed to load contacts");
+    const res = await fetch(`${API_URL}/api/contacts`);
+    if (!res.ok) throw new Error("Failed to load contacts");
 
-    const contacts = await response.json();
+    const data = await res.json();
     const list = document.getElementById("contactList");
     list.innerHTML = "";
 
-    contacts.forEach(c => {
+    (data.contacts || []).forEach(c => {
       const item = document.createElement("li");
-      item.textContent = `${c.name} - ${c.phone}`;
+      item.textContent = `${c.name} - ${c.phone} (${c.status})`;
       list.appendChild(item);
     });
   } catch (err) {
-    console.error(err);
-    alert("Network error: Could not connect to server");
+    console.error("Error loading contacts:", err);
+    alert("⚠️ Network error: Could not connect to server");
   }
 }
 
-// Example: Admin login check (optional if you’ll add password later)
-async function verifyPassword(password) {
-  const response = await fetch(`${API_URL}/api/verify-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password }),
-  });
-  return response.ok;
+// ✅ Admin login
+async function adminLogin() {
+  const password = prompt("Enter admin password:");
+  if (!password) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/admin/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      alert("✅ Logged in successfully!");
+      loadContacts();
+    } else {
+      alert("❌ Wrong password.");
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    alert("⚠️ Network error: Could not connect to server");
+  }
 }
 
-// Load contacts when the page opens
-window.addEventListener("DOMContentLoaded", loadContacts);
+// ✅ Load contacts automatically when logged in
+window.addEventListener("DOMContentLoaded", adminLogin);
